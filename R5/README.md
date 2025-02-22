@@ -32,10 +32,11 @@ Below is a global structure for the final output:
     ```json
     {
         "matched_scenarios": [
-            "scenario1", "scenario2", ...
+            "scenario1", "scenario2"
         ]
     }
     ```
+    *Note* : The list may include additional scenario names
 
 ## Code Structure
 
