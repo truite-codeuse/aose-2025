@@ -74,7 +74,7 @@ Create a `config.py` file (or similar) that includes your sensitive information 
 # config.py
 api_key = "YOUR_API_KEY_HERE"
 ```
-*Note:* Make sure this file is not shared or pushed to public repositories.
+*Note* : Make sure this file is not shared or pushed to public repositories.
 
 ### 2. Dependencies:
 Install the required packages using:
