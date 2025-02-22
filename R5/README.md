@@ -36,7 +36,7 @@ Below is a global structure for the final output:
         ]
     }
     ```
-    *Note* : The list may include additional scenario names
+    *Note* : The list may include additional scenario names.
 
 ## Code Structure
 
