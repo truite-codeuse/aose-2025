@@ -31,10 +31,9 @@ In our multi-role architecture, **Role 5** handles the scenario matching process
 Below is a global structure for the final output:
     ```json
     {
-    "matched_scenarios": [
-        "repair request"
-    ],
-    "info": ""
+        "matched_scenarios": [
+            "scenario1", "scenario2", ...
+        ]
     }
     ```
 
@@ -108,10 +107,9 @@ For testing, if you run the script with:
 You might receive an output like:
 ```json
 {
-  "matched_scenarios": [
-    "repair request"
-  ],
-  "info": ""
+    "matched_scenarios": [
+        "repair request"
+    ]
 }
 ```
 This JSON output can then be forwarded to Role 6 as needed.
