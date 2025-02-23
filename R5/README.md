@@ -30,6 +30,7 @@ In our multi-role architecture, **Role 5** handles the scenario matching process
 - **Output:**\
 The final output is a JSON object that contains:
   - **project_id**: The project identifier.
+  - **user_input**: The original user input text.
   - **matched_scenarios**: An array containing the scenarios that best match the user's input.
   - **info**: A string field for additional information (e.g., error messages or processing details). This field may be empty on success.
 Below is a global structure for the final output:
@@ -37,6 +38,7 @@ Below is a global structure for the final output:
     ```json
     {
         "project_id": "PRJID05",
+        "user_input": "The user input text here.",
         "matched_scenarios": [
             "scenario1", "scenario2"
         ],
@@ -132,7 +134,7 @@ curl http://localhost:8000/health
 ### 4. Run the Service:
 Start the Role 5 service with:
 ```bash
-uvicorn role5_service:app --host 0.0.0.0 --port 8005 --reload
+uvicorn role5_service:app --host 0.0.0.0 --port 8005
 ```
 
 ### 5. Testing the Communication:
@@ -175,6 +177,7 @@ You might receive an output like:
 ```json
 {
     "project_id": "PRJ15875",
+    "user_input": "...",
     "matched_scenarios": [
         "repair request"
     ],
