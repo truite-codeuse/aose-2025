@@ -7,7 +7,7 @@ url = "http://localhost:8005/match"
 # Test data
 payload = {
     "project_id": "PRJ15875",
-    "user_input": ["I'd like to have my computer refunded."]
+    "user_input": ["I'd like to have my computer refunded, I have a warranty."]
 }
 
 try:

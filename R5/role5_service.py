@@ -35,7 +35,7 @@ def match_endpoint(request: MatchRequest):
         raise HTTPException(status_code=500, detail=str(e))
     
     # Send the result to Role 6
-    # send_to_role6(result)
+    send_to_role6(result)
     
     # For now, simply display the result (or return it)
     print("Result to be sent to Role 6 (not sent):", result)
@@ -121,41 +121,6 @@ def get_project_scenarios(project_id):
 
     return scenarios
 
-# def build_prompt(scenarios, user_input):
-#     """
-#     Builds a textual prompt to send to the LLM.
-
-#     The LLM does not need the project ID itself, only the list of scenarios and user request.
-#     We instruct the LLM to match user request to the relevant scenario(s) and respond in JSON.
-
-#     Args:
-#         scenarios (list of str): The list of possible scenarios.
-#         user_input (list of str): The user's input request.
-
-#     Returns:
-#         str: The complete prompt text to send to the LLM.
-#     """
-#     instruction = (
-#         "You are an assistant specialized in matching user request with a list of scenarios.\n\n"
-#         "You are given multiple potential scenarios and some user request.\n"
-#         "Your goal: determine which scenarios best match the user's request.\n"
-#         "Please respond in JSON format and nothing else, for example:\n"
-#         "{\n"
-#         '  "matched_scenarios": ["Scenario 1", "Scenario 2"]\n'
-#         "}\n"
-#         "Return only the relevant scenarios.\n"
-#         "Do NOT provide any additional commentary or text outside of the JSON.\n"
-#     )
-
-#     scenario_text = "\n".join(f"- {s}" for s in scenarios)
-#     user_text = "\n".join(f"- {p}" for p in user_input)
-#     full_prompt = (
-#         f"{instruction}\n\n"
-#         f"LIST OF SCENARIOS:\n{scenario_text}\n\n"
-#         f"USER REQUEST:\n{user_text}\n\n"
-#     )
-#     return full_prompt
-
 def build_prompt(scenarios, user_input):
     """
     Constructs a concise and structured prompt for the LLM to efficiently match 
@@ -175,7 +140,7 @@ def build_prompt(scenarios, user_input):
         "The output format must be a valid JSON object with a single key:\n"
         '{ "matched_scenarios": ["Scenario 1", "Scenario 2"] }\n'
         "Strict rules:\n"
-        "- Do not include any additional text, explanations, or formatting outside the JSON.\n"
+        "- Do not include any additional text, explanations, backslash n like \\n or formatting outside the JSON.\n"
         "- Respond with an empty list if no scenario matches.\n"
     )
 
@@ -189,7 +154,7 @@ def build_prompt(scenarios, user_input):
         "Provide the JSON response now:"
     )
 
-    return full_prompt
+    return full_prompt.strip()
 
 def call_llm(session_id, prompt, host="http://localhost:8000"):
     """
@@ -207,8 +172,8 @@ def call_llm(session_id, prompt, host="http://localhost:8000"):
     payload = {
         "session_id": session_id,
         "user_message": prompt,
-        "max_new_tokens": 20,
-        "temperature": 0.3,
+        "max_new_tokens": 100,
+        "temperature": 0.5,
         "repetition_penalty": 1.1
     }
 
