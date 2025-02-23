@@ -11,10 +11,11 @@ app = FastAPI(title="Role 5 - Matching Scenarios Service")
 # Pydantic models for request/response
 class MatchRequest(BaseModel):
     project_id: str
-    user_phrases: list[str]
+    user_input: list[str]
 
 class MatchResponse(BaseModel):
     project_id: str
+    user_input: list[str]
     matched_scenarios: list[str]
     info: str = ""
 
@@ -25,15 +26,15 @@ def health_check():
 @app.post("/match", response_model=MatchResponse)
 def match_endpoint(request: MatchRequest):
     """
-    Receives a project_id and user_phrases, processes the matching using the LLM,
+    Receives a project_id and user_input, processes the matching using the LLM,
     and returns the matching result as JSON.
     """
     try:
-        result = match_scenarios_with_llm(request.project_id, request.user_phrases)
+        result = match_scenarios_with_llm(request.project_id, request.user_input)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
-    # Optionally, send the result to Role 6 (currently commented out)
+    # Send the result to Role 6
     # send_to_role6(result)
     
     # For now, simply display the result (or return it)
@@ -120,24 +121,24 @@ def get_project_scenarios(project_id):
 
     return scenarios
 
-def build_prompt(scenarios, user_phrases):
+def build_prompt(scenarios, user_input):
     """
     Builds a textual prompt to send to the LLM.
 
-    The LLM does not need the project ID itself, only the list of scenarios and user phrases.
-    We instruct the LLM to match user phrases to the relevant scenario(s) and respond in JSON.
+    The LLM does not need the project ID itself, only the list of scenarios and user request.
+    We instruct the LLM to match user request to the relevant scenario(s) and respond in JSON.
 
     Args:
         scenarios (list of str): The list of possible scenarios.
-        user_phrases (list of str): The user's input phrases.
+        user_input (list of str): The user's input request.
 
     Returns:
         str: The complete prompt text to send to the LLM.
     """
     instruction = (
-        "You are an assistant specialized in matching user phrases with a list of scenarios.\n\n"
-        "You are given multiple potential scenarios and some user phrases.\n"
-        "Your goal: determine which scenarios best match the user's phrases.\n"
+        "You are an assistant specialized in matching user request with a list of scenarios.\n\n"
+        "You are given multiple potential scenarios and some user request.\n"
+        "Your goal: determine which scenarios best match the user's request.\n"
         "Please respond in JSON format and nothing else, for example:\n"
         "{\n"
         '  "matched_scenarios": ["Scenario 1", "Scenario 2"]\n'
@@ -146,11 +147,11 @@ def build_prompt(scenarios, user_phrases):
         "Do NOT provide any additional commentary or text outside of the JSON.\n"
     )
     scenario_text = "\n".join(f"- {s}" for s in scenarios)
-    user_text = "\n".join(f"- {p}" for p in user_phrases)
+    user_text = "\n".join(f"- {p}" for p in user_input)
     full_prompt = (
         f"{instruction}\n\n"
         f"LIST OF SCENARIOS:\n{scenario_text}\n\n"
-        f"USER PHRASES:\n{user_text}\n\n"
+        f"USER REQUEST:\n{user_text}\n\n"
         "Please provide the matching scenarios in JSON format.\n"
     )
     return full_prompt
@@ -184,21 +185,23 @@ def call_llm(session_id, prompt, host="http://localhost:8000"):
 
     return llm_text
 
-def match_scenarios_with_llm(project_id, user_phrases):
+def match_scenarios_with_llm(project_id, user_input):
     """
     Orchestrates the entire pipeline:
       1) Retrieves scenarios for the given project from Ai-Raison.
-      2) Builds a prompt with those scenarios and the user's phrases.
+      2) Builds a prompt with those scenarios and the user's request.
       3) Calls the LLM API to get a matching result.
       4) Attempts to parse the LLM's answer as JSON.
 
     Args:
         project_id (str): The project's identifier (e.g. "PRJ15875").
-        user_phrases (list of str): The user's input phrases.
+        user_input (list of str): The user's input request.
 
     Returns:
         dict: A dictionary containing the matched scenarios, for example:
         {
+            "project_id" : "",
+            "user_input" : ""
             "matched_scenarios": [...],
             "info": "some message if needed"
         }
@@ -207,7 +210,7 @@ def match_scenarios_with_llm(project_id, user_phrases):
     scenarios = get_project_scenarios(project_id)
 
     # 2) Build the LLM prompt
-    prompt = build_prompt(scenarios, user_phrases)
+    prompt = build_prompt(scenarios, user_input)
 
     # 3) Call the LLM
     llm_output = call_llm(session_id="matching_scenarios_session", prompt=prompt)
@@ -223,6 +226,7 @@ def match_scenarios_with_llm(project_id, user_phrases):
     if not extracted_json:
         return {
             "project_id": project_id,
+            "user_input": user_input,
             "matched_scenarios": [],
             "info": "No JSON object found in LLM response."
         }
@@ -236,8 +240,9 @@ def match_scenarios_with_llm(project_id, user_phrases):
             "info": "Could not parse extracted JSON from LLM response."
         }
     
-    # Add the project_id to the final result, regardless of parsing success
+    # Add the project_id and the user's input to the final result, regardless of parsing success
     result_json["project_id"] = project_id
+    result_json["user_input"] = user_input
 
     return result_json
 
@@ -247,7 +252,7 @@ def send_to_role6(result_json):
     Sends the result JSON to Role 6 via an HTTP POST.
     
     """
-    ROLE6_URL = "http://localhost:8006/receive_result"  # Placeholder URL
+    ROLE6_URL = "http://localhost:8006/find_solution" # URL
     try:
         response = requests.post(ROLE6_URL, json=result_json)
         response.raise_for_status()
