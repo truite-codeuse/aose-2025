@@ -135,64 +135,61 @@ def get_project_scenarios(project_id):
 #     Returns:
 #         str: The complete prompt text to send to the LLM.
 #     """
-#     # instruction = (
-#     #     "You are an assistant specialized in matching user request with a list of scenarios.\n\n"
-#     #     "You are given multiple potential scenarios and some user request.\n"
-#     #     "Your goal: determine which scenarios best match the user's request.\n"
-#     #     "Please respond in JSON format and nothing else, for example:\n"
-#     #     "{\n"
-#     #     '  "matched_scenarios": ["Scenario 1", "Scenario 2"]\n'
-#     #     "}\n"
-#     #     "Return only the relevant scenarios.\n"
-#     #     "Do NOT provide any additional commentary or text outside of the JSON.\n"
-#     # )
 #     instruction = (
-#     "You are an assistant that matches a user request with a list of predefined scenarios.\n\n"
-#     "List of scenarios:\n"
-#     "{scenarios}\n\n"
-#     "User request:\n"
-#     "{user_input}\n\n"
-#     "Return ONLY the best matching scenarios as a comma-separated list. Example:\n"
-#     "Scenario 1, Scenario 2, Scenario 3\n"
-#     "Do NOT include explanations, additional text, or JSON formatting."
+#         "You are an assistant specialized in matching user request with a list of scenarios.\n\n"
+#         "You are given multiple potential scenarios and some user request.\n"
+#         "Your goal: determine which scenarios best match the user's request.\n"
+#         "Please respond in JSON format and nothing else, for example:\n"
+#         "{\n"
+#         '  "matched_scenarios": ["Scenario 1", "Scenario 2"]\n'
+#         "}\n"
+#         "Return only the relevant scenarios.\n"
+#         "Do NOT provide any additional commentary or text outside of the JSON.\n"
 #     )
+
 #     scenario_text = "\n".join(f"- {s}" for s in scenarios)
 #     user_text = "\n".join(f"- {p}" for p in user_input)
 #     full_prompt = (
 #         f"{instruction}\n\n"
 #         f"LIST OF SCENARIOS:\n{scenario_text}\n\n"
 #         f"USER REQUEST:\n{user_text}\n\n"
-#         "Please ONLY provide best matching scenarios as a comma-separated list, nothing else.\n"
 #     )
 #     return full_prompt
 
 def build_prompt(scenarios, user_input):
     """
-    Builds a concise and optimized prompt to send to the LLM.
-
-    The LLM does not need the project ID, only the list of scenarios and user input.
-    We instruct the LLM to match the request to the most relevant scenarios
-    and respond ONLY with a comma-separated list of matching scenario names.
+    Constructs a concise and structured prompt for the LLM to efficiently match 
+    user requests with predefined scenarios and return a JSON response.
 
     Args:
-        scenarios (list of str): The list of possible scenarios.
-        user_input (list of str): The user's input request.
+        scenarios (list of str): List of possible scenarios.
+        user_input (list of str): User's request.
 
     Returns:
-        str: A compact and efficient prompt for the LLM.
+        str: A well-formatted prompt optimized for fast and accurate matching.
     """
-
+    
     instruction = (
-        "Match the user request with the most relevant scenarios from the given list.\n"
-        "Respond ONLY with a comma-separated list of matching scenarios, and nothing else.\n"
-        "No explanations, no extra text, no formatting—just the scenario names.\n"
+        "You are an AI assistant that matches user requests with predefined scenarios.\n"
+        "Your task is to return ONLY the best-matching scenarios from the provided list.\n"
+        "The output format must be a valid JSON object with a single key:\n"
+        '{ "matched_scenarios": ["Scenario 1", "Scenario 2"] }\n'
+        "Strict rules:\n"
+        "- Do not include any additional text, explanations, or formatting outside the JSON.\n"
+        "- Respond with an empty list if no scenario matches.\n"
     )
 
-    scenario_text = "\n".join(scenarios)
-    user_text = "\n".join(user_input)
+    scenario_text = ", ".join(f'"{s}"' for s in scenarios)  # Inline for brevity
+    user_text = ", ".join(f'"{p}"' for p in user_input)
 
-    return f"{instruction}\nScenarios:\n{scenario_text}\n\nUser Request:\n{user_text}\n\nResponse:"
+    full_prompt = (
+        f"{instruction}\n\n"
+        f"Scenarios: [{scenario_text}]\n"
+        f"User Request: [{user_text}]\n\n"
+        "Provide the JSON response now:"
+    )
 
+    return full_prompt
 
 def call_llm(session_id, prompt, host="http://localhost:8000"):
     """
@@ -211,7 +208,7 @@ def call_llm(session_id, prompt, host="http://localhost:8000"):
         "session_id": session_id,
         "user_message": prompt,
         "max_new_tokens": 20,
-        "temperature": 0.7,
+        "temperature": 0.3,
         "repetition_penalty": 1.1
     }
 
@@ -254,35 +251,24 @@ def match_scenarios_with_llm(project_id, user_input):
     llm_output = call_llm(session_id="matching_scenarios_session", prompt=prompt)
     print("DEBUG - LLM raw output:", repr(llm_output))
 
-    # # 4) Preprocess with regex to extract only the JSON block
-    # extracted_json = None
-    # match_obj = re.search(r'(\{.*\})', llm_output, re.DOTALL)
-    # if match_obj:
-    #     # Retrieve only the part between the first '{' and the last '}'
-    #     extracted_json = match_obj.group(1).strip()
+    # 4) Preprocess with regex to extract only the JSON block
+    extracted_json = None
+    match_obj = re.search(r'(\{.*\})', llm_output, re.DOTALL)
+    if match_obj:
+        # Retrieve only the part between the first '{' and the last '}'
+        extracted_json = match_obj.group(1).strip()
 
-    # if not extracted_json:
-    #     return {
-    #         "project_id": project_id,
-    #         "user_input": user_input,
-    #         "matched_scenarios": [],
-    #         "info": "No JSON object found in LLM response."
-    #     }
-    
-    # Convertir la réponse brute en une liste Python
-    matched_scenarios = [s.strip() for s in llm_output.split(",") if s.strip()]
-
-    # Construire le JSON nous-mêmes (100x plus rapide que de laisser la LLM le faire)
-    result_json = {
-        "project_id": project_id,
-        "user_input": user_input,
-        "matched_scenarios": matched_scenarios,
-        "info": ""  # Aucun message d'erreur car la transformation est fiable
-    }
+    if not extracted_json:
+        return {
+            "project_id": project_id,
+            "user_input": user_input,
+            "matched_scenarios": [],
+            "info": "No JSON object found in LLM response."
+        }
 
     # Attempt to parse the extracted JSON block
     try:
-        result_json = json.loads(result_json)
+        result_json = json.loads(extracted_json)
     except json.JSONDecodeError:
         result_json = {
             "matched_scenarios": [],
