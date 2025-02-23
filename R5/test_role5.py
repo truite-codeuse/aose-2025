@@ -7,7 +7,7 @@ url = "http://localhost:8005/match"
 # Test data
 payload = {
     "project_id": "PRJ15875",
-    "user_input": ["I'd like to have my computer refunded, I have a warranty."]
+    "user_input": ["I'd like to have my computer repaired. The product is not repairable but is under warranty, what can you do for me?"]
 }
 
 try:

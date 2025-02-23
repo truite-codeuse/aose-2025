@@ -173,7 +173,7 @@ def call_llm(session_id, prompt, host="http://localhost:8000"):
         "session_id": session_id,
         "user_message": prompt,
         "max_new_tokens": 100,
-        "temperature": 0.5,
+        "temperature": 0.7,
         "repetition_penalty": 1.1
     }
 
