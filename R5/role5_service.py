@@ -1,8 +1,47 @@
+# --- FastAPI microservice setup ---
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
 import json
 import requests
 import re
-
 from config import api_key
+
+app = FastAPI(title="Role 5 - Matching Scenarios Service")
+
+# Pydantic models for request/response
+class MatchRequest(BaseModel):
+    project_id: str
+    user_phrases: list[str]
+
+class MatchResponse(BaseModel):
+    project_id: str
+    matched_scenarios: list[str]
+    info: str = ""
+
+@app.get("/health")
+def health_check():
+    return {"status": "OK"}
+
+@app.post("/match", response_model=MatchResponse)
+def match_endpoint(request: MatchRequest):
+    """
+    Receives a project_id and user_phrases, processes the matching using the LLM,
+    and returns the matching result as JSON.
+    """
+    try:
+        result = match_scenarios_with_llm(request.project_id, request.user_phrases)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+    # Optionally, send the result to Role 6 (currently commented out)
+    # send_to_role6(result)
+    
+    # For now, simply display the result (or return it)
+    print("Result to be sent to Role 6 (not sent):", result)
+    return result
+
+
+# --- Pipeline functions ---
 
 def extract_elements_and_options(metadata):
     """
@@ -44,10 +83,7 @@ def get_data_api(url, api_key):
     Returns:
         metadata: Returned metadata
     """
-    headers = {
-        "x-api-key": api_key
-    }
-
+    headers = {"x-api-key": api_key}
     try:
         response = requests.get(url, headers=headers)
         if response.status_code == 200:
@@ -58,6 +94,8 @@ def get_data_api(url, api_key):
             print(f"Error {response.status_code}: {response.text}")
     except Exception as e:
         print(f"An error occurred: {e}")
+        metadata = {}
+
     return metadata
 
 def get_project_scenarios(project_id):
@@ -79,6 +117,7 @@ def get_project_scenarios(project_id):
 
     # We only take the scenario labels as a list.
     scenarios = list(elems.keys())
+
     return scenarios
 
 def build_prompt(scenarios, user_phrases):
@@ -106,10 +145,8 @@ def build_prompt(scenarios, user_phrases):
         "Return only the relevant scenarios.\n"
         "Do NOT provide any additional commentary or text outside of the JSON.\n"
     )
-
     scenario_text = "\n".join(f"- {s}" for s in scenarios)
     user_text = "\n".join(f"- {p}" for p in user_phrases)
-
     full_prompt = (
         f"{instruction}\n\n"
         f"LIST OF SCENARIOS:\n{scenario_text}\n\n"
@@ -123,7 +160,7 @@ def call_llm(session_id, prompt, host="http://localhost:8000"):
     Sends the constructed prompt to the locally hosted LLM API (FastAPI) at /generate.
 
     Args:
-        session_id (str): A unique identifier for the conversation (if needed by your LLM).
+        session_id (str): A unique identifier for the conversation.
         prompt (str): The text to be processed by the LLM.
         host (str): The base URL of the LLM API (default: http://localhost:8000).
 
@@ -144,6 +181,7 @@ def call_llm(session_id, prompt, host="http://localhost:8000"):
 
     data = resp.json()
     llm_text = data["response"]
+
     return llm_text
 
 def match_scenarios_with_llm(project_id, user_phrases):
@@ -167,8 +205,6 @@ def match_scenarios_with_llm(project_id, user_phrases):
     """
     # 1) Retrieve scenarios from Ai-Raison
     scenarios = get_project_scenarios(project_id)
-    # for scenario in scenarios:
-    #     print(scenario)
 
     # 2) Build the LLM prompt
     prompt = build_prompt(scenarios, user_phrases)
@@ -179,37 +215,48 @@ def match_scenarios_with_llm(project_id, user_phrases):
 
     # 4) Preprocess with regex to extract only the JSON block
     extracted_json = None
-    match = re.search(r'(\{.*\})', llm_output, re.DOTALL)
-    if match:
+    match_obj = re.search(r'(\{.*\})', llm_output, re.DOTALL)
+    if match_obj:
         # Retrieve only the part between the first '{' and the last '}'
-        extracted_json = match.group(1).strip()
+        extracted_json = match_obj.group(1).strip()
 
     if not extracted_json:
-        # No JSON portion found
         return {
+            "project_id": project_id,
             "matched_scenarios": [],
             "info": "No JSON object found in LLM response."
         }
-
+    
     # Attempt to parse the extracted JSON block
     try:
         result_json = json.loads(extracted_json)
     except json.JSONDecodeError:
-        # Invalid JSON, missing quotes, etc.
         result_json = {
             "matched_scenarios": [],
             "info": "Could not parse extracted JSON from LLM response."
         }
+    
+    # Add the project_id to the final result, regardless of parsing success
+    result_json["project_id"] = project_id
 
     return result_json
+
+# --- Functions for communication with Role 6 ---
+def send_to_role6(result_json):
+    """
+    Sends the result JSON to Role 6 via an HTTP POST.
     
+    """
+    ROLE6_URL = "http://localhost:8006/receive_result"  # Placeholder URL
+    try:
+        response = requests.post(ROLE6_URL, json=result_json)
+        response.raise_for_status()
+        return response.json()  # Optionally, return Role 6's response
+    except Exception as e:
+        print(f"Error sending to Role 6: {e}")
+        return None
+
+# --- Main block to run the service ---
 if __name__ == "__main__":
-    # Example usage
-    project_id = "PRJ15875"
-    user_phrases = ["I'd like to have my computer repaired"]
-    # user_phrases = ["I'd like to have my computer refunded"]
-
-    result = match_scenarios_with_llm(project_id, user_phrases)
-
-    print("===== FINAL RESULT =====")
-    print(json.dumps(result, ensure_ascii=False, indent=2))
+    import uvicorn
+    uvicorn.run("role5_service:app", host="0.0.0.0", port=8005, reload=True)

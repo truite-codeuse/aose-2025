@@ -27,13 +27,20 @@ In our multi-role architecture, **Role 5** handles the scenario matching process
     - The raw LLM output is preprocessed using regex to extract only the JSON block.
     - The extracted JSON is parsed and returned as a dictionary.
 
-- **Output:** The final output is a JSON object that contains a list of matched scenarios. The structure of the response will thus include the **matched_scenarios** key, which holds relevant scenarios, based on the user's input. 
+- **Output:**\
+The final output is a JSON object that contains:
+  - **project_id**: The project identifier.
+  - **matched_scenarios**: An array containing the scenarios that best match the user's input.
+  - **info**: A string field for additional information (e.g., error messages or processing details). This field may be empty on success.
 Below is a global structure for the final output:
+
     ```json
     {
+        "project_id": "PRJID05",
         "matched_scenarios": [
             "scenario1", "scenario2"
-        ]
+        ],
+        "info": "..."
     }
     ```
     *Note* : The list may include additional scenario names.
@@ -62,9 +69,36 @@ Below is a global structure for the final output:
 
     - `match_scenarios_with_llm(project_id, user_phrases)`\
         Orchestrates the entire process from retrieving scenarios to parsing the LLM's JSON response.
+    
+    - `send_to_role6(result_json)`\
+        Sends the result to Role 6 via an HTTP POST.
 
 - **Regex Preprocessing:**\
     Before attempting to parse the LLM response, a regex is used to extract only the JSON block from the raw output to handle any extra text returned by the model.
+
+## Running and Communication
+### Launching the Service
+
+To launch the Role 5 service, run the following command in your project directory:
+```bash
+uvicorn role5_service:app --host 0.0.0.0 --port 8005 --reload
+```
+This starts the service on port **8005**, making the following endpoints available:
+
+- Health Check: `http://localhost:8005/health`
+- Matching Endpoint: `http://localhost:8005/match`
+
+### Communication Between Roles
+
+- **Input Reception:**\
+    Role 5 exposes an endpoint `/match` that receives a JSON payload containing:
+    - **project_id:** The identifier of the project.
+    - **user_phrases:** A list of user input phrases.
+
+    This data can be sent by another role (e.g., Role 2) without needing further configuration on Role 5's side. Role 5 simply listens on this endpoint.
+
+- **Output Delivery:**\
+    The matching result is returned as a JSON response, which also includes the project_id along with the matched_scenarios and info fields. In addition, the service is set up to send this result to Role 6 via an HTTP POST.
 
 ## Setup Instructions
 
@@ -95,12 +129,44 @@ Verify that the health endpoint (`http://localhost:8000/health`)  returns the ex
 curl http://localhost:8000/health
 ```
 
-### 4. Run the Script:
-Execute the script `python scenario_matcher.py` to perform the matching process.
+### 4. Run the Service:
+Start the Role 5 service with:
+```bash
+uvicorn role5_service:app --host 0.0.0.0 --port 8005 --reload
+```
+
+### 5. Testing the Communication:
+
+You can test the service with a separate Python script (e.g., test_role5.py) that sends a POST request with hard-coded values:
+```python
+import json
+import requests
+
+url = "http://localhost:8005/match"
+
+payload = {
+    "project_id": "PRJ15875",
+    "user_phrases": ["I'd like to have my computer repaired"]
+}
+
+try:
+    response = requests.post(url, json=payload)
+    response.raise_for_status()
+    result = response.json()
+    print("Matched Scenarios Result:")
+    print(json.dumps(result, indent=2, ensure_ascii=False))
+except Exception as e:
+    print("Error during test:", e)
+
+```
+Run this script with:
+```bash
+python test_role5.py
+```
 
 ## Example Usage
 
-For testing, if you run the script with:
+For testing, if you send the following input:
 
 - Project ID: `"PRJ15875"`
 - User Phrases: `["I'd like to have my computer repaired"]`
@@ -108,12 +174,14 @@ For testing, if you run the script with:
 You might receive an output like:
 ```json
 {
+    "project_id": "PRJ15875",
     "matched_scenarios": [
         "repair request"
-    ]
+    ],
+    "info": ""
 }
 ```
-This JSON output can then be forwarded to Role 6 as needed.
+This JSON output can then be forwarded to Role 6 once it is configured.
 
 ## Notes
 
