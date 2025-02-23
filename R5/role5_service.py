@@ -35,7 +35,7 @@ def match_endpoint(request: MatchRequest):
         raise HTTPException(status_code=500, detail=str(e))
     
     # Send the result to Role 6
-    # send_to_role6(result)
+    send_to_role6(result)
     
     # For now, simply display the result (or return it)
     print("Result to be sent to Role 6 (not sent):", result)
@@ -172,7 +172,7 @@ def call_llm(session_id, prompt, host="http://localhost:8000"):
     payload = {
         "session_id": session_id,
         "user_message": prompt,
-        "max_new_tokens": 200,
+        "max_new_tokens": 50,
         "temperature": 0.7,
         "repetition_penalty": 1.1
     }
@@ -256,10 +256,8 @@ def send_to_role6(result_json):
     try:
         response = requests.post(ROLE6_URL, json=result_json)
         response.raise_for_status()
-        return response.json()  # Optionally, return Role 6's response
     except Exception as e:
         print(f"Error sending to Role 6: {e}")
-        return None
 
 # --- Main block to run the service ---
 if __name__ == "__main__":
