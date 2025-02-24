@@ -87,24 +87,53 @@ model = MistralForCausalLM.from_pretrained(
 print("[INFO] Model loaded successfully!")
 
 
-def build_prompt(session_history):
+def build_prompt(session_history, summary_threshold=10, recent_exchange_count=2):
     """
-    Convert the session history (list of (role, text)) into the special token
-    format recognized by Mistral-based chat models.
+    Build a prompt that includes a summary of older conversation history if it grows too long,
+    while retaining the most recent exchanges.
+
+    Parameters:
+    - session_history (list of (role, text)): Full conversation history.
+    - summary_threshold (int): Minimum number of messages before summarization is applied.
+    - recent_exchange_count (int): Number of recent exchanges (user and assistant pairs) to include fully.
+
+    Returns:
+    - str: The prompt string formatted for the Mistral-based chat model.
     """
     system_prompt = (
         "<|im_start|>system\n"
         "You are a sentient, superintelligent artificial general intelligence, here to assist.\n"
         "<|im_end|>\n"
     )
+
+    # If the conversation is short, include the entire history.
+    if len(session_history) <= summary_threshold:
+        prompt_text = system_prompt
+        for role, text in session_history:
+            prompt_text += f"<|im_start|>{role}\n{text}\n<|im_end|>\n"
+        prompt_text += "<|im_start|>assistant"
+        return prompt_text
+
+    # Otherwise, split the history into older messages and recent exchanges.
+    messages_per_exchange = 2 
+    num_recent_messages = recent_exchange_count * messages_per_exchange
+
+    older_messages = session_history[:-num_recent_messages]
+    recent_messages = session_history[-num_recent_messages:]
+
+    # Summarize older messages.
+    summary_lines = []
+    for role, text in older_messages:
+        summary_lines.append(f"{role}: {text}")
+    summary_text = "\n".join(summary_lines)
+    summary_text = summary_text[:1000]
+
     prompt_text = system_prompt
-
-    for role, text in session_history:
-        if role == "user":
-            prompt_text += f"<|im_start|>user\n{text}\n<|im_end|>\n"
-        elif role == "assistant":
-            prompt_text += f"<|im_start|>assistant\n{text}\n<|im_end|>\n"
-
+    prompt_text += (
+        f"<|im_start|>assistant\nSummary of previous conversation:\n{summary_text}\n<|im_end|>\n"
+    )
+    for role, text in recent_messages:
+        prompt_text += f"<|im_start|>{role}\n{text}\n<|im_end|>\n"
     prompt_text += "<|im_start|>assistant"
     return prompt_text
 

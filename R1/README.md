@@ -12,7 +12,7 @@ This project provides a FastAPI-based API that leverages a Mistral-based Large L
 ## Project Structure
 
 ```
-my_llm_service/
+R1/
 ├── app/
 │   └── main.py          # FastAPI application code
 ├── docker-compose.yml   # Docker Compose configuration for PostgreSQL
@@ -149,5 +149,37 @@ Your API should now be accessible at [http://0.0.0.0:8000](http://0.0.0.0:8000).
   {
     "response": "Generated response text from the model.",
     "session_id": "example-session"
+  }
+  ```
+
+### Clear Session
+
+- **URL:** `/clear_session`
+- **Method:** `DELETE`
+- **Description:** Clears the session history for the specified session ID by deleting all stored messages from the database. This endpoint is useful for resetting the conversation history.
+- **Payload Example:**
+
+  ```json
+  {
+  "session_id": "example-session"
+  }
+
+  ```
+
+- **Example using curl:**
+
+  ```bash
+  curl -X DELETE "http://localhost:8000/clear_session" \
+     -H "Content-Type: application/json" \
+     -d '{"session_id": "example-session"}'
+  ```
+
+- **Response:**
+
+  ```json
+  {
+  "status": "Session cleared",
+  "session_id": "example-session",
+  "deleted_messages": 5
   }
   ```
