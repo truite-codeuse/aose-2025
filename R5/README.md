@@ -4,7 +4,7 @@
 Role R5; **Nassim Lattab**
 
 **Purpose:**
-This script implements Role 5 in our multi-role system. It is responsible for matching user input phrases with scenarios associated with a specific project. More precisely, **Role 5** processes user input to match it against predefined scenarios retrieved from the Ai-Raison API. The process involves receiving a project identifier and user phrases, constructing a detailed prompt for a locally hosted LLM, and finally parsing the response to extract the matched scenarios. All results are formatted in JSON and forwarded to **Role 6** for further processing. 
+This script implements Role 5 in our multi-role system. It is responsible for matching user input phrases with scenarios associated with a specific project. More precisely, **Role 5** processes user input to match it against predefined scenarios retrieved from the Ai-Raison API. The process involves receiving a project identifier and user phrases, constructing a detailed prompt for a locally hosted LLM, and finally parsing the response to extract the matched scenarios. All results are formatted in JSON and forwarded to for further processing. 
 
 The script is as follows:
 
@@ -12,7 +12,7 @@ The script is as follows:
 2. **Builds** a prompt that combines the retrieved scenarios with user phrases.
 3. **Sends** the prompt to a locally hosted LLM API (via FastAPI) for matching.
 4. **Extracts** and returns the matching scenarios from the LLM’s JSON response.
-5. **Formats** the output as JSON to be forwarded to Role 6.
+5. **Formats** the output as JSON to be forwarded to the Broker.
 
 ### Project Overview
 
@@ -84,7 +84,7 @@ The matching algorithm in Role 5 orchestrates a sequence of operations designed 
 
 4. **Final Output and Forwarding**
     - After the JSON is successfully parsed, the system enriches the result by adding the original `project_id` and `user_input` fields, and sets the `info` field to empty upon success.
-    - The resulting JSON object is then forwarded to Role 6 via an HTTP POST using `send_to_role6(result_json)`.
+    - The resulting JSON object is then forwarded to the Broker via an HTTP POST.
 
 #### Pseudocode Representation
 ```python
@@ -132,9 +132,6 @@ This step-by-step algorithm ensures that the user input is accurately matched to
 
     - `match_scenarios_with_llm(project_id, user_phrases)`\
         Orchestrates the entire process from retrieving scenarios to parsing the LLM's JSON response.
-    
-    - `send_to_role6(result_json)`\
-        Sends the result to Role 6 via an HTTP POST.
 
 - **Regex Preprocessing:**\
     Before attempting to parse the LLM response, a regex is used to extract only the JSON block from the raw output to handle any extra text returned by the model.
@@ -191,7 +188,7 @@ This starts the service on port **8005**, making the following endpoints availab
 
 #### 5. Testing the Communication:
 
-You can test the service with a separate Python script (e.g., `test_role5.py`) that sends a POST request with hard-coded values:
+You can test the service with a separate Python script (e.g., `test_role5.py`) that sends a POST request with hard-coded values, as the Broker do:
 ```python
 import json
 import requests
@@ -226,7 +223,7 @@ For testing, if you send the following input:
 
 The receive output is:
 ![alt text](images/output_test.png)
-This JSON output can then be forwarded to Role 6 once it is configured.
+This JSON output can then be returned to be forwarded once it is configured.
 
 ### Notes
 
@@ -253,7 +250,7 @@ Effective logging is critical for monitoring, debugging, and auditing the matchi
     Log the result of the regex extraction and JSON parsing. If errors occur, log the error details and problematic output.
 
 - **Forwarding Logging:**\
-    Log the final JSON result before it is sent to Role 6, along with any errors encountered during the HTTP POST.
+    Log the final JSON result before it is returned, along with any errors encountered during the HTTP POST.
 
 This streamlined logging approach ensures essential traceability without excessive repetition, allowing issues to be quickly identified and resolved.
 Example Log Entry we could have :
@@ -262,12 +259,11 @@ Example Log Entry we could have :
 2025-02-24 15:30:45,456 DEBUG [Role5] Constructed prompt: "You are an AI assistant that matches user requests..."
 2025-02-24 15:30:46,789 DEBUG [Role5] LLM raw output: "{ "matched_scenarios": ["repair request"] }"
 2025-02-24 15:30:46,900 INFO [Role5] Successfully parsed LLM response. Matched scenarios: ["repair request"]
-2025-02-24 15:30:47,001 INFO [Role5] Forwarding result to Role 6: { "project_id": "PRJ15875", ... }
 ```
 This detailed logging strategy provides full traceability of the entire matching process, from the moment a request is received to when the result is forwarded to the next service. It ensures that any issues can be quickly identified and resolved, which is critical in a multi-service architecture where errors in one role can affect the overall system performance.
 
 ### R5 Conclusion
 
-In summary, **Role 5** serves as a critical component within our multi-role architecture, bridging user input and project-specific scenarios through an LLM-based matching process. By leveraging the Ai-Raison API to retrieve scenario labels and constructing a clear, instructive prompt, this service ensures that user requests are accurately classified. Robust logging, strict JSON output handling, and optional error recovery measures further enhance reliability. Once Role 5 completes its matching task, it seamlessly forwards the results to **Role 6**, integrating smoothly with the broader system. This design promotes modularity, scalability, and maintainability, enabling future enhancements or customizations without disrupting the core functionality.
+In summary, **Role 5** serves as a critical component within our multi-role architecture, bridging user input and project-specific scenarios through an LLM-based matching process. By leveraging the Ai-Raison API to retrieve scenario labels and constructing a clear, instructive prompt, this service ensures that user requests are accurately classified. Robust logging, strict JSON output handling, and optional error recovery measures further enhance reliability. Once Role 5 completes its matching task, it seamlessly forwards the results to the Broker, integrating smoothly with the broader system. This design promotes modularity, scalability, and maintainability, enabling future enhancements or customizations without disrupting the core functionality.
 
 ---
