@@ -120,34 +120,20 @@ This step-by-step algorithm ensures that the user input is accurately matched to
 - **Regex Preprocessing:**\
     Before attempting to parse the LLM response, a regex is used to extract only the JSON block from the raw output to handle any extra text returned by the model.
 ---
-## Running and Communication
-### Launching the Service
-
-To launch the Role 5 service, run the following command in your project directory:
-```bash
-uvicorn role5_service:app --host 0.0.0.0 --port 8005
-```
-This starts the service on port **8005**, making the following endpoints available:
-
-- Health Check: `http://localhost:8005/health`
-- Matching Endpoint: `http://localhost:8005/match`
-
-### Communication Between Roles
-
-- **Input Reception:**\
-    Role 5 exposes an endpoint `/match` that receives a JSON payload containing:
-    - **project_id:** The identifier of the project.
-    - **user_phrases:** A list of user input phrases.
-
-    This data can be sent by another role (e.g., Role 2) without needing further configuration on Role 5's side. Role 5 simply listens on this endpoint.
-
-- **Output Delivery:**\
-    The matching result is returned as a JSON response, which also includes the project_id along with the matched_scenarios and info fields. In addition, the service is set up to send this result to Role 6 via an HTTP POST.
-
 ## Setup Instructions
+### 0. Cloning the Repository
+
+If you have access to the repository, you can clone it with:
+```bash
+git clone <repository_url>
+```
+Then navigate to the R5 folder before starting the service.
+```bash
+cd R5
+```
 
 ### 1. Configuration:
-Create a `config.py` file (or similar) that includes your sensitive information such as:
+Create a `config.py` file (or similar) that includes your sensitive information such as the api key for AI-Raison API:
 ```python
 # config.py
 api_key = "YOUR_API_KEY_HERE"
@@ -178,6 +164,11 @@ Start the Role 5 service with:
 ```bash
 uvicorn role5_service:app --host 0.0.0.0 --port 8005
 ```
+This starts the service on port **8005**, making the following endpoints available:
+
+- Health Check: `http://localhost:8005/health`
+- Matching Endpoint: `http://localhost:8005/match`
+
 
 ### 5. Testing the Communication:
 
