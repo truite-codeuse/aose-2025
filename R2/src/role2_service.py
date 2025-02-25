@@ -28,7 +28,7 @@ class PayloadFor_AdAgent(BaseModel):
 	user_input   : str
 	similarities : ScoresDict
 
-class PayloadFor_ScenarioMatchingAgent(BaseModel):  # MatchRequest in R5
+class PayloadFor_ScenarioMatchingAgent(BaseModel):  # corresponds to MatchRequest in R5
 	project_id: ProjectID
 	user_input: list[str]
 
@@ -42,7 +42,9 @@ class PayloadFor_SentenceMatcher(BaseModel):
 	epsilon    : float                  | None
 
 class RawUserInput(BaseModel):
-	user_input: str
+	user_input : str
+	get_max    : bool  = False
+	threshold  : float = 0.5
 
 
 
@@ -109,11 +111,14 @@ def match_scenario_endpoint(request: RawUserInput):
 		input_sentences,
 		model_key = "sbert",
 	)
-	matched_projects = [
-		project_id
-		for project_id, score in scores.items()
-		if score > 0.5
-	]
+	if request.get_max:
+		matched_projects = [list(scores.items())[0][0]]
+	else:
+		matched_projects = [
+			project_id
+			for project_id, score in scores.items()
+			if score > request.threshold
+		]
 	result = [
 		PayloadFor_ScenarioMatchingAgent(
 			project_id = matched_project,
@@ -129,4 +134,4 @@ if __name__ == "__main__":
 	MODELS = load_all_models()
 	update_raison_projects_data()
 	print(RAISON_PROJECTS)
-	uvc_run(app, port=PORT, host="0.0.0.0")
+	uvc_run(app, port=PORT, host="0.0.0.0", reload=True)

@@ -18,6 +18,12 @@ from .project_data import ProjectID, ProjectsDict
 
 
 
+#######################################################################
+#
+# Typing and constants
+#
+#######################################################################
+
 EXPAND_PROMPTS = False
 
 InputText       = list[str]
@@ -269,7 +275,7 @@ def get_rare_words(
 
 #######################################################################
 #
-# User input vs baseline comparison compute functions
+# User input vs baseline comparison functions
 #
 #######################################################################
 
@@ -364,17 +370,19 @@ def compute_cosine_scores_by_sentences(
 	return result
 
 
+
 #######################################################################
 #
-# Model loading functions
+# Model loaders
 #
 #######################################################################
 
 def load_sentence_model(model_literal : SentenceModel_Literal) -> SentenceModel:
 	result : SentenceModel
 	if   model_literal == "sbert"            : result = SentenceTransformer(SBERT_MODEL_STR)
+	# TODO fix
 	elif model_literal == "google-use-lite"  : result = hub.load(GUSE_MODEL_STR_LITE ).signatures['default']
-	elif model_literal == "google-use-large" : result = hub.load(GUSE_MODEL_STR_LARGE).signatures['default']
+	elif model_literal == "google-use-large" : result = hub.load(GUSE_MODEL_STR_LARGE)
 	else: raise ValueError(f"Invalid sentence model {model_literal}")
 	return result
 
@@ -407,12 +415,12 @@ def load_all_models() -> ModelsDict_Both:
 	return result
 
 
-#######################################################################
-#
-# Request handler utils
-#
-#######################################################################
 
+#######################################################################
+#
+# Request handler
+#
+#######################################################################
 
 def get_sentence_matching_scores(
 	models      : ModelsDict_Both,
