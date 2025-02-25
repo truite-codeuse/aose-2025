@@ -1,6 +1,7 @@
-# Role 5 - Matching Scenarios
+## Role 5 - Scenarios Matcher
 
-**Author: Nassim Lattab**
+### Author
+Role R5; **Nassim Lattab**
 
 **Purpose:**
 This script implements Role 5 in our multi-role system. It is responsible for matching user input phrases with scenarios associated with a specific project. More precisely, **Role 5** processes user input to match it against predefined scenarios retrieved from the Ai-Raison API. The process involves receiving a project identifier and user phrases, constructing a detailed prompt for a locally hosted LLM, and finally parsing the response to extract the matched scenarios. All results are formatted in JSON and forwarded to **Role 6** for further processing. 
@@ -13,7 +14,7 @@ The script is as follows:
 4. **Extracts** and returns the matching scenarios from the LLM’s JSON response.
 5. **Formats** the output as JSON to be forwarded to Role 6.
 
-## Project Overview
+### Project Overview
 
 In our multi-role architecture, **Role 5** handles the scenario matching process:
 
@@ -56,10 +57,10 @@ Below is a global structure for the final output:
     ```
     *Note* : The list may include additional scenario names.
 
-## Algorithm 
+### Algorithm 
 
 The matching algorithm in Role 5 orchestrates a sequence of operations designed to retrieve relevant scenarios, construct a suitable prompt, interact with the LLM, and deliver the final results. The process follows these detailed steps:
-### Unified Processing Flow and Algorithm
+#### Unified Processing Flow and Algorithm
 
 1. **Scenario Retrieval**
 
@@ -85,7 +86,7 @@ The matching algorithm in Role 5 orchestrates a sequence of operations designed 
     - After the JSON is successfully parsed, the system enriches the result by adding the original `project_id` and `user_input` fields, and sets the `info` field to empty upon success.
     - The resulting JSON object is then forwarded to Role 6 via an HTTP POST using `send_to_role6(result_json)`.
 
-### Pseudocode Representation
+#### Pseudocode Representation
 ```python
 def match_scenarios_with_llm(project_id, user_input):
     scenarios = get_project_scenarios(project_id)
@@ -107,7 +108,7 @@ def match_scenarios_with_llm(project_id, user_input):
 ```
 This step-by-step algorithm ensures that the user input is accurately matched to the available scenarios by leveraging the generative capabilities of the LLM while enforcing strict JSON output for reliable downstream processing.
 
-## Code Structure
+### Code Structure
 
 - **Configuration:**
     Sensitive data such as the API key are stored in a separate configuration file `(config.py)`.
@@ -138,8 +139,8 @@ This step-by-step algorithm ensures that the user input is accurately matched to
 - **Regex Preprocessing:**\
     Before attempting to parse the LLM response, a regex is used to extract only the JSON block from the raw output to handle any extra text returned by the model.
 ---
-## Setup Instructions
-### 0. Cloning the Repository
+### Setup Instructions
+#### 0. Cloning the Repository
 
 If you have access to the repository, you can clone it with:
 ```bash
@@ -150,7 +151,7 @@ Then navigate to the R5 folder before starting the service.
 cd R5
 ```
 
-### 1. Configuration:
+#### 1. Configuration:
 Create a `config.py` file (or similar) that includes your sensitive information such as the api key for AI-Raison API:
 ```python
 # config.py
@@ -158,13 +159,13 @@ api_key = "YOUR_API_KEY_HERE"
 ```
 *Note* : Make sure this file is not shared or pushed to public repositories.
 
-### 2. Dependencies:
+#### 2. Dependencies:
 Install the required packages using:
 ```bash
 pip install requests
 ```
 
-### 3. LLM API:
+#### 3. LLM API:
 >**Important:** Role 5 depends on the Role 1 LLM Service to be running.
 
 Ensure Role 1 is set up according to its README and that your local LLM API (R1) is running. You can start it with:
@@ -177,7 +178,7 @@ Verify that the health endpoint (`http://localhost:8000/health`)  returns the ex
 curl http://localhost:8000/health
 ```
 
-### 4. Run the Service:
+#### 4. Run the Service:
 Start the Role 5 service with:
 ```bash
 uvicorn role5_service:app --host 0.0.0.0 --port 8005
@@ -188,7 +189,7 @@ This starts the service on port **8005**, making the following endpoints availab
 - Matching Endpoint: `http://localhost:8005/match`
 
 
-### 5. Testing the Communication:
+#### 5. Testing the Communication:
 
 You can test the service with a separate Python script (e.g., `test_role5.py`) that sends a POST request with hard-coded values:
 ```python
@@ -217,7 +218,7 @@ Run this script with:
 python test_role5.py
 ```
 
-## Example Usage
+### Example Usage
 
 For testing, if you send the following input:
 
@@ -227,7 +228,7 @@ The receive output is:
 ![alt text](images/output_test.png)
 This JSON output can then be forwarded to Role 6 once it is configured.
 
-## Notes
+### Notes
 
 - **Prompt Engineering:**\
     The prompt provided to the LLM is crucial. Ensure it clearly instructs the LLM to return only valid JSON and no additional commentary.
@@ -238,7 +239,7 @@ This JSON output can then be forwarded to Role 6 once it is configured.
 - **Customization:**\
     Adjust the API URLs, generation parameters (e.g., max_new_tokens, temperature), and other configurations according to your environment and requirements.
 
-## Log Files
+### Log Files
 
 Effective logging is critical for monitoring, debugging, and auditing the matching process. In our implementation, logging occurs at several key stages:
 
@@ -265,6 +266,8 @@ Example Log Entry we could have :
 ```
 This detailed logging strategy provides full traceability of the entire matching process, from the moment a request is received to when the result is forwarded to the next service. It ensures that any issues can be quickly identified and resolved, which is critical in a multi-service architecture where errors in one role can affect the overall system performance.
 
-## Conclusion
+### R5 Conclusion
 
 In summary, **Role 5** serves as a critical component within our multi-role architecture, bridging user input and project-specific scenarios through an LLM-based matching process. By leveraging the Ai-Raison API to retrieve scenario labels and constructing a clear, instructive prompt, this service ensures that user requests are accurately classified. Robust logging, strict JSON output handling, and optional error recovery measures further enhance reliability. Once Role 5 completes its matching task, it seamlessly forwards the results to **Role 6**, integrating smoothly with the broader system. This design promotes modularity, scalability, and maintainability, enabling future enhancements or customizations without disrupting the core functionality.
+
+---
