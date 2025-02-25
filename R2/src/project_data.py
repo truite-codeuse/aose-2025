@@ -1,6 +1,9 @@
 from __future__ import annotations
 from typing import TypedDict
+from os import environ
+import requests
 
+from dotenv import load_dotenv
 
 
 ProjectID = str
@@ -17,7 +20,7 @@ ProjectData = TypedDict(
 )
 
 # The elements and options fields should be filled by pinging rAIson
-RAISON_PROJECT_IDS : dict[ProjectID, ProjectData] = {
+RAISON_PROJECTS : dict[ProjectID, ProjectData] = {
 	"PRJ17225": {
 		"author"      : "Tristan Duquesne",
 		"title"       : "What fair price should buyer pay to seller ?",
@@ -40,8 +43,12 @@ RAISON_PROJECT_IDS : dict[ProjectID, ProjectData] = {
 	},
 	"PRJ15875": {
 		"author"      : ("Mohamed Azzaoui", "Nassim Lattab"),
-		"title"       : "TODO",
-		"description" : "TODO",
+		"title"       : "AI-CHATBOT",
+		"description" : (
+			"An intelligent customer service chatbot designed to handle order tracking, returns, "
+			"refunds, and claims. It provides clear and reliable responses, streamlining customer "
+			"support while reducing workload on service teams."
+		),
 		"elements"    : [],
 		"options"     : [],
 	},
@@ -67,3 +74,32 @@ RAISON_PROJECT_IDS : dict[ProjectID, ProjectData] = {
 	# "Latifou Yaya"
 }
 
+
+
+load_dotenv('.env')
+RAISON_API_KEY = environ.get('RAISON_API_KEY')
+
+RAISON_API_HEADERS = {
+	"x-api-key": RAISON_API_KEY,
+	"Content-Type": "application/json"
+}
+
+def build_project_url(project_id: ProjectID) -> str:
+	return f"https://api.ai-raison.com/executions/{project_id}/latest"
+
+def get_project_data(id: ProjectID) -> tuple[list[str], list[str]]:
+	url      = build_project_url(id)
+	response = requests.get(url, headers = RAISON_API_HEADERS)
+	data     = response.json()
+	elements = [e["label"] for e in data.get("elements", [])]
+	options  = [o["label"] for o in data.get("options",  [])]
+	return elements, options
+
+def update_raison_projects_data():
+	for project_id in RAISON_PROJECTS:
+		elements, options = get_project_data(project_id)
+		RAISON_PROJECTS[project_id]["elements"] = elements
+		RAISON_PROJECTS[project_id]["options"]  = options
+
+update_raison_projects_data()
+print(RAISON_PROJECTS)
