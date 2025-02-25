@@ -26,9 +26,9 @@ In order to function properly, **Role 5** relies on two key inputs that allow it
   
     - **User Input Phrases (`user_input`):**  
     A list of sentences that express the user's requirements or requests.  
+    *Example:* `["I'd like to have my computer repaired."]`
     
     These inputs are typically provided as JSON in a POST request to the `/match` endpoint. A **Pydantic** model ensures that `project_id` is a string and `user_input` is a list of strings, offering basic validation. 
-    *Example:* `["I'd like to have my computer repaired."]`
 
 - **Process:**
     1. The script constructs an API URL using the project ID and fetches metadata from the Ai-Raison API.
