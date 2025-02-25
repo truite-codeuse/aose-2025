@@ -3,7 +3,9 @@
 **Author: Nassim Lattab**
 
 **Purpose:**
-This script implements Role 5 in our multi-role system. It is responsible for matching user input phrases with scenarios associated with a specific project. The script:
+This script implements Role 5 in our multi-role system. It is responsible for matching user input phrases with scenarios associated with a specific project. More precisely, **Role 5** processes user input to match it against predefined scenarios retrieved from the Ai-Raison API. The process involves receiving a project identifier and user phrases, constructing a detailed prompt for a locally hosted LLM, and finally parsing the response to extract the matched scenarios. All results are formatted in JSON and forwarded to **Role 6** for further processing. 
+
+The script is as follows:
 
 1. **Retrieves** the list of scenarios for a given project from the Ai-Raison API.
 2. **Builds** a prompt that combines the retrieved scenarios with user phrases.
@@ -15,17 +17,24 @@ This script implements Role 5 in our multi-role system. It is responsible for ma
 
 In our multi-role architecture, **Role 5** handles the scenario matching process:
 
-- **Input:**
-    - A project identifier (e.g., `"PRJ15875"`) used to retrieve project metadata from Ai-Raison.
-    - A list of user phrases (e.g., `["I'd like to have my computer repaired"]`).
+- **Input:**\
+In order to function properly, **Role 5** relies on two key inputs that allow it to fetch relevant scenarios and understand the user’s needs:
+    - **Project Identifier (`project_id`):**\
+    A unique string that is used to query the Ai-Raison API. This API returns project metadata including all available scenarios (elements) and options.  
+    *Example:* `"PRJ15875"`
+  
+    - **User Input Phrases (`user_input`):**  
+    A list of sentences that express the user's requirements or requests.  
+    These inputs are typically provided as JSON in a POST request to the `/match` endpoint. A **Pydantic** model ensures that `project_id` is a string and `user_input` is a list of strings, offering basic validation. 
+    *Example:* `["I'd like to have my computer repaired."]`
 
 - **Process:**
-    - The script constructs an API URL using the project ID and fetches metadata from the Ai-Raison API.
-    - It extracts scenario labels from the metadata.
-    - It builds a detailed prompt combining the list of scenarios and the user phrases, instructing the LLM to return a JSON object with the matched scenarios.
-    - It calls the LLM API (running locally at `http://localhost:8000/generate`) to get a response.
-    - The raw LLM output is preprocessed using regex to extract only the JSON block.
-    - The extracted JSON is parsed and returned as a dictionary.
+    1. The script constructs an API URL using the project ID and fetches metadata from the Ai-Raison API.
+    2. It extracts scenario labels from the metadata.
+    3. It builds a detailed prompt combining the list of scenarios and the user phrases, instructing the LLM to return a JSON object with the matched scenarios.
+    4. It calls the LLM API (running locally at `http://localhost:8000/generate`) to get a response.
+    5. The raw LLM output is preprocessed using regex to extract only the JSON block.
+    6. The extracted JSON is parsed and returned as a dictionary.
 
 - **Output:**\
 The final output is a JSON object that contains:
@@ -186,3 +195,34 @@ This JSON output can then be forwarded to Role 6 once it is configured.
 
 - **Customization:**\
     Adjust the API URLs, generation parameters (e.g., max_new_tokens, temperature), and other configurations according to your environment and requirements.
+
+## Log Files
+
+Effective logging is critical for monitoring, debugging, and auditing the matching process. In our implementation, logging occurs at several key stages:
+
+- **Request Logging:**\
+    Log the incoming project_id and user_input with a timestamp when a request is received at the /match endpoint.
+
+- **Prompt and API Call Logging:**\
+    Log the complete prompt and details of the outgoing LLM API call (including parameters and session ID), as well as the raw LLM output.
+
+- **Response Processing Logging:**\
+    Log the result of the regex extraction and JSON parsing. If errors occur, log the error details and problematic output.
+
+- **Forwarding Logging:**\
+    Log the final JSON result before it is sent to Role 6, along with any errors encountered during the HTTP POST.
+
+This streamlined logging approach ensures essential traceability without excessive repetition, allowing issues to be quickly identified and resolved.
+Example Log Entry we could have :
+```yaml
+2025-02-24 15:30:45,123 INFO [Role5] Received request for project_id: PRJ15875 with user_input: ["I'd like to have my computer repaired"]
+2025-02-24 15:30:45,456 DEBUG [Role5] Constructed prompt: "You are an AI assistant that matches user requests..."
+2025-02-24 15:30:46,789 DEBUG [Role5] LLM raw output: "{ "matched_scenarios": ["repair request"] }"
+2025-02-24 15:30:46,900 INFO [Role5] Successfully parsed LLM response. Matched scenarios: ["repair request"]
+2025-02-24 15:30:47,001 INFO [Role5] Forwarding result to Role 6: { "project_id": "PRJ15875", ... }
+```
+This detailed logging strategy provides full traceability of the entire matching process, from the moment a request is received to when the result is forwarded to the next service. It ensures that any issues can be quickly identified and resolved, which is critical in a multi-service architecture where errors in one role can affect the overall system performance.
+
+## Conclusion
+
+In summary, **Role 5** serves as a critical component within our multi-role architecture, bridging user input and project-specific scenarios through an LLM-based matching process. By leveraging the Ai-Raison API to retrieve scenario labels and constructing a clear, instructive prompt, this service ensures that user requests are accurately classified. Robust logging, strict JSON output handling, and optional error recovery measures further enhance reliability. Once Role 5 completes its matching task, it seamlessly forwards the results to **Role 6**, integrating smoothly with the broader system. This design promotes modularity, scalability, and maintainability, enabling future enhancements or customizations without disrupting the core functionality.
