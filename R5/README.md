@@ -170,20 +170,10 @@ python test_role5.py
 
 For testing, if you send the following input:
 
-- Project ID: `"PRJ15875"`
-- User Phrases: `["I'd like to have my computer repaired"]`
+![alt text](images/input_test.png)
 
-You might receive an output like:
-```json
-{
-    "project_id": "PRJ15875",
-    "user_input": ["I'd like to have my computer repaired"],
-    "matched_scenarios": [
-        "repair request"
-    ],
-    "info": ""
-}
-```
+The receive output is:
+![alt text](images/output_test.png)
 This JSON output can then be forwarded to Role 6 once it is configured.
 
 ## Notes
