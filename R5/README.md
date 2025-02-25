@@ -87,6 +87,25 @@ The matching algorithm in Role 5 orchestrates a sequence of operations designed 
 
 ### Pseudocode Representation
 ![alt text](images/pseudo_code.png)
+```python
+def match_scenarios_with_llm(project_id, user_input):
+    scenarios = get_project_scenarios(project_id)
+    prompt = build_prompt(scenarios, user_input)
+    llm_output = call_llm("matching_scenarios_session", prompt)
+    
+    extracted_json = extract_JSON(llm_output)
+    if not extracted_json:
+        result = error_result(project_id, user_input, "No JSON object found")
+    else:
+        parsed_result = parse_JSON(extracted_json)
+        if not parsed_result:
+            result = error_result(project_id, user_input, "Could not parse JSON")
+        else:
+            result = formatted_result(project_id, user_input, parsed_result)
+    
+    send_to_role6(result)
+    return result
+```
 This step-by-step algorithm ensures that the user input is accurately matched to the available scenarios by leveraging the generative capabilities of the LLM while enforcing strict JSON output for reliable downstream processing.
 
 ## Code Structure
