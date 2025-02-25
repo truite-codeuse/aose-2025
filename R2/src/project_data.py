@@ -101,5 +101,6 @@ def update_raison_projects_data():
 		RAISON_PROJECTS[project_id]["elements"] = elements
 		RAISON_PROJECTS[project_id]["options"]  = options
 
-update_raison_projects_data()
-print(RAISON_PROJECTS)
+if __name__ == "__main__":
+	update_raison_projects_data()
+	print(RAISON_PROJECTS)

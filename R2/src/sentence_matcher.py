@@ -1,10 +1,14 @@
 from __future__ import annotations
-from typing import TypedDict, Literal, Callable, cast
+from typing import TypedDict, Literal, Callable, Any, Union, cast
+from math import inf
 
 
 import torch
 import nltk
+import tensorflow as tf
 import tensorflow_hub as hub
+from gensim.models import KeyedVectors
+import gensim.downloader as gensim_api
 from sentence_transformers import SentenceTransformer, util
 from sklearn.feature_extraction.text import TfidfVectorizer
 
@@ -12,19 +16,27 @@ from .project_data import ProjectID
 
 
 
-MODE_SBERT     = True
-GUSE_LITE      = True
 EXPAND_PROMPTS = False
+SentenceModel_Literal = Literal[
+	"sbert",
+	"google-use-large",
+	"google-use-lite",
+]
+LexiconModel_Literal  = Literal[
+	"word2vec",
+	"glove",
+]
+SentenceModel = Union[SentenceTransformer, hub.KerasLayer]
+LexiconModel  = Union[KeyedVectors]
 
-DEFAULT_ALPHA   = 1.5
-DEFAULT_EPSILON = 1e-6
+DEFAULT_MODEL_SENTENCE = "sbert"
+DEFAULT_MODEL_LEXICON  = "glove"
+SBERT_MODEL_STR        = "all-MiniLM-L6-v2"  ## https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2
+GUSE_MODEL_STR_LITE    = "https://tfhub.dev/google/universal-sentence-encoder-lite/2"
+GUSE_MODEL_STR_LARGE   = "https://tfhub.dev/google/universal-sentence-encoder/4"
 
-SBERT_MODEL_STR = "all-MiniLM-L6-v2"  ## https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2
-GUSE_MODEL_STR  = (
-	"https://tfhub.dev/google/universal-sentence-encoder-lite/2"
-	if GUSE_LITE else
-	"https://tfhub.dev/google/universal-sentence-encoder/4"
-)
+
+
 
 PayloadFor_AdAgent = TypedDict(
 	"PayloadFor_AdAgent",
@@ -50,7 +62,7 @@ PayloadFor_ScenarioMatchingAgent = TypedDict(
 #
 #######################################################################
 
-MeanMode_Literal        = Literal[
+MeanMode_Literal = Literal[
 	"arithmetic",
 	"softmax",
 	"harmonic",
@@ -63,15 +75,16 @@ WNDistanceMode_Literal = Literal[
 	"jiang-conrath",
 	"lin",
 ]
-SimilarityMode_Literal  = Literal[
+SimilarityMode_Literal = Literal[
 	"distance",
 	"cosine",
 ]
 
-DEFAULT_MODE_MEAN = "harmonic"
-DEFAULT_MODE_WN   = "path"
+DEFAULT_MODE_MEAN = cast(MeanMode_Literal, "harmonic")
+DEFAULT_MODE_WN   = cast(WNDistanceMode_Literal, "path")
 DEFAULT_MODE_SIM  = "cosine"
-
+DEFAULT_ALPHA     = 1.5
+DEFAULT_EPSILON   = 1e-6
 
 def score_mean(
 	similarity_matrix : torch.Tensor,
@@ -86,6 +99,7 @@ def score_mean(
 	"""
 	get_extreme = torch.min if sim_mode == "distance" else torch.max
 	ext_scores  = get_extreme(similarity_matrix, dim=1).values
+	ext_scores  = ext_scores[torch.isfinite(ext_scores)]
 	result      = torch.mean(ext_scores).item()
 	return result
 
@@ -109,6 +123,7 @@ def score_softmax_mean(
 		return exp_x / torch.sum(exp_x)
 	get_extreme = torch.min if sim_mode == "distance" else torch.max
 	ext_scores  = get_extreme(similarity_matrix, dim=1).values
+	ext_scores  = ext_scores[torch.isfinite(ext_scores)]
 	weights     = softmax(ext_scores, alpha)
 	result      = torch.sum(weights * ext_scores).item()
 	return result
@@ -149,17 +164,25 @@ def compute_distance_similarity_matrix_by_lexicon(
 	similarity_matrix = torch.zeros(len(user_words), len(match_words))
 	for i, user_word in enumerate(user_words):
 		for j, match_word in enumerate(match_words):
-			similarity_matrix[i, j] = distance_fn(
-				wordnet.synsets(user_word  )[0],
-				wordnet.synsets(match_word )[0],
-			)
+			user_synsets  = wordnet.synsets(user_word)
+			match_synsets = wordnet.synsets(match_word)
+			if len(user_synsets) == 0 or len(match_synsets) == 0:
+				print(f"{user_word=} {match_word=}")
+				similarity_matrix[i, j] = inf
+			else:
+				# print("\033[1;31m", (i,j), "\033[0m")
+				similarity_matrix[i, j] = distance_fn(
+					user_synsets  [0],
+					match_synsets [0],
+				)
+	print(similarity_matrix)
 	return similarity_matrix
 
 
-def compute_cosine_similarity_matrix_by_sentences(
+def compute_cosine_similarity_matrix(
 	user_prompt : list[str],
 	match_strs  : list[str],
-	model       : SentenceTransformer | hub.KerasLayer,
+	encoder     : Callable[[list[str]], torch.Tensor],
 ) -> torch.Tensor:
 	"""
 	Compute cosine similarity between a prompt and a list of sentences.
@@ -167,8 +190,8 @@ def compute_cosine_similarity_matrix_by_sentences(
 	"""
 	user_sentences   = sum([nltk.sent_tokenize(user_str)  for user_str  in user_prompt ], cast(list[str], []))
 	match_sentences  = sum([nltk.sent_tokenize(match_str) for match_str in match_strs  ], cast(list[str], []))
-	user_embeddings  = model.encode(user_sentences,  convert_to_tensor = True)
-	match_embeddings = model.encode(match_sentences, convert_to_tensor = True)
+	user_embeddings  = encoder(user_sentences)
+	match_embeddings = encoder(match_sentences)
 	cosine_scores    = util.pytorch_cos_sim(user_embeddings, match_embeddings)
 	return cosine_scores
 
@@ -254,8 +277,8 @@ def compute_distance_scores_by_lexicon(
 	documents   : dict[ProjectID, list[str]],
 	distance    : WNDistanceMode_Literal,
 	mean_mode   : MeanMode_Literal,
-	alpha       : float                   = DEFAULT_ALPHA,
-	epsilon     : float                   = DEFAULT_EPSILON,
+	alpha       : float                     = DEFAULT_ALPHA,
+	epsilon     : float                     = DEFAULT_EPSILON,
 ) -> dict[ProjectID, float]:
 	"""
 	Compute similarity scores based on WordNet distance.
@@ -266,12 +289,12 @@ def compute_distance_scores_by_lexicon(
 		"softmax"    : lambda x: score_softmax_mean  (x, "distance", alpha),
 		"harmonic"   : lambda x: score_harmonic_mean (x, "distance", epsilon),
 	}[mean_mode]
-	user_words = sum([nltk.word_tokenize(sentence) for sentence in user_prompt], cast(list[str], []))
-	user_words = list(set(user_words))
+	user_words = sum([nltk.word_tokenize(sentence.lower()) for sentence in user_prompt], cast(list[str], []))
+	user_words = [w for w in set(user_words) if wordnet.synsets(w) != []]
 	doc_scores = {}
 	for doc_id, doc_sentences in documents.items():
-		match_words        = sum([nltk.word_tokenize(sentence) for sentence in doc_sentences], cast(list[str], []))
-		match_words        = list(set(match_words))
+		match_words        = sum([nltk.word_tokenize(sentence.lower()) for sentence in doc_sentences], cast(list[str], []))
+		match_words        = [w for w in set(match_words) if wordnet.synsets(w) != []]
 		similarity_matrix  = compute_distance_similarity_matrix_by_lexicon(user_words, match_words, distance)
 		score              = mean_fn(similarity_matrix)
 		doc_scores[doc_id] = score
@@ -282,10 +305,10 @@ def compute_distance_scores_by_lexicon(
 def compute_cosine_scores_by_lexicon(
 	user_prompt : list[str],
 	documents   : dict[ProjectID, list[str]],
-	model       : SentenceTransformer | hub.KerasLayer,
+	model       : LexiconModel,
 	mean_mode   : MeanMode_Literal,
-	alpha       : float                   = DEFAULT_ALPHA,
-	epsilon     : float                   = DEFAULT_EPSILON,
+	alpha       : float                      = DEFAULT_ALPHA,
+	epsilon     : float                      = DEFAULT_EPSILON,
 ) -> dict[ProjectID, float]:
 	"""
 	Compute similarity scores based on cosine similarity.
@@ -296,23 +319,24 @@ def compute_cosine_scores_by_lexicon(
 		"softmax"    : lambda x: score_softmax_mean  (x, "cosine", alpha),
 		"harmonic"   : lambda x: score_harmonic_mean (x, "cosine", epsilon),
 	}[mean_mode]
-	user_words = sum([nltk.word_tokenize(sentence) for sentence in user_prompt], cast(list[str], []))
+	encoder    = lambda x: torch.tensor([model[word] for word in x if word in model])
+	user_words = sum([nltk.word_tokenize(sentence.lower()) for sentence in user_prompt], cast(list[str], []))
 	user_words = list(set(user_words))
 	doc_scores = {}
 	for doc_id, doc_sentences in documents.items():
-		match_words        = sum([nltk.word_tokenize(sentence) for sentence in doc_sentences], cast(list[str], []))
+		match_words        = sum([nltk.word_tokenize(sentence.lower()) for sentence in doc_sentences], cast(list[str], []))
 		match_words        = list(set(match_words))
-		similarity_matrix  = compute_cosine_similarity_matrix_by_sentences(user_words, match_words, model)
+		similarity_matrix  = compute_cosine_similarity_matrix(user_words, match_words, encoder)
 		score              = mean_fn(similarity_matrix)
 		doc_scores[doc_id] = score
-	doc_scores_sorted = sorted(doc_scores.items(), key=lambda x: x[1])
+	doc_scores_sorted = sorted(doc_scores.items(), key=lambda x: x[1], reverse=True)
 	result = {doc_id: score for doc_id, score in doc_scores_sorted}
 	return result
 
 def compute_cosine_scores_by_sentences(
 	user_prompt : list[str],
 	documents   : dict[ProjectID, list[str]],
-	model       : SentenceTransformer | hub.KerasLayer,
+	model       : SentenceModel,
 	mean_mode   : MeanMode_Literal,
 	alpha       : float                   = DEFAULT_ALPHA,
 	epsilon     : float                   = DEFAULT_EPSILON,
@@ -326,12 +350,12 @@ def compute_cosine_scores_by_sentences(
 		"softmax"    : lambda x: score_softmax_mean  (x, "cosine", alpha),
 		"harmonic"   : lambda x: score_harmonic_mean (x, "cosine", epsilon),
 	}[mean_mode]
-
-	user_words = sum([nltk.word_tokenize(sentence) for sentence in user_prompt], cast(list[str], []))
+	encoder    = lambda x: model.encode(x)
+	user_words = sum([nltk.sent_tokenize(sentence) for sentence in user_prompt], cast(list[str], []))
 	user_words = list(set(user_words))
 	doc_scores = {}
 	for doc_id, doc_sentences in documents.items():
-		similarity_matrix  = compute_cosine_similarity_matrix_by_sentences(user_words, doc_sentences, model)
+		similarity_matrix  = compute_cosine_similarity_matrix(user_words, doc_sentences, encoder)
 		score              = mean_fn(similarity_matrix)
 		doc_scores[doc_id] = score
 	doc_scores_sorted = sorted(doc_scores.items(), key=lambda x: x[1], reverse=True)
@@ -340,14 +364,36 @@ def compute_cosine_scores_by_sentences(
 
 
 
+def load_word2vec_model() -> KeyedVectors:
+	result = gensim_api.load('word2vec-google-news-300')
+	assert isinstance(result, KeyedVectors)
+	return result
+
+def load_glove_model() -> KeyedVectors:
+	result = gensim_api.load("glove-wiki-gigaword-100")
+	assert isinstance(result, KeyedVectors)
+	return result
+
+
 if __name__ == '__main__':
 	nltk.download('wordnet')
 	nltk.download('omw-1.4')  # Open Multilingual WordNet; necessary for newer versions of wordnet
 	nltk.download('brown')	# Brown corpus; necessary for a TF-IDF baseline
+	nltk.download('punkt')	# Punkt tokenizer; necessary for sentence tokenization
 	from nltk.corpus import wordnet
 	from nltk.corpus import brown
-	sbert_model = SentenceTransformer(SBERT_MODEL_STR)
-	guse_model  = hub.load(GUSE_MODEL_STR)
+	# Sentence-based
+	model_sentence   : SentenceModel
+	if   DEFAULT_MODEL_SENTENCE == "sbert"            : model_sentence = SentenceTransformer(SBERT_MODEL_STR)
+	elif DEFAULT_MODEL_SENTENCE == "google-use-lite"  : model_sentence = hub.load(GUSE_MODEL_STR_LITE ).signatures['default']
+	elif DEFAULT_MODEL_SENTENCE == "google-use-large" : model_sentence = hub.load(GUSE_MODEL_STR_LARGE).signatures['default']
+	else: raise ValueError(f"Invalid sentence model {DEFAULT_MODEL_SENTENCE}")
+	# Lexicon-based
+	if   DEFAULT_MODEL_LEXICON == "word2vec" : model_lexicon = load_word2vec_model()
+	elif DEFAULT_MODEL_LEXICON == "glove"    : model_lexicon = load_glove_model()
+	else: raise ValueError(f"Invalid lexicon model {DEFAULT_MODEL_LEXICON}")
+
+
 
 	documents = {
 		'doc1': ['The miner extracted the ore.', 'The scout analyzed the cave.'],
@@ -357,8 +403,13 @@ if __name__ == '__main__':
 	}
 	prompt = 'Find and carry the minerals.'
 
-	scores = compute_similarity_scores(documents, prompt)
-	print(scores)
+	dist_scores = compute_distance_scores_by_lexicon ([prompt], documents, DEFAULT_MODE_WN, DEFAULT_MODE_MEAN)
+	cosl_scores = compute_cosine_scores_by_lexicon   ([prompt], documents, model_lexicon,   DEFAULT_MODE_MEAN)
+	coss_scores = compute_cosine_scores_by_sentences ([prompt], documents, model_sentence,  DEFAULT_MODE_MEAN)
+
+	print("Distance scores:", dist_scores)
+	print("Cosine scores (lexicon):", cosl_scores)
+	print("Cosine scores (sentence):", coss_scores)
 
 	vectorizer = get_tfidf_brown_vectorizer()
 	relevant_words = get_rare_words(vectorizer, prompt)
