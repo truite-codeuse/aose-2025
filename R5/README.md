@@ -105,8 +105,7 @@ def match_scenarios_with_llm(project_id, user_input):
         else:
             result = formatted_result(project_id, user_input, parsed_result)
     
-    send(result)
-    return result
+    return result # Broker retrieves results
 ```
 This step-by-step algorithm ensures that the user input is accurately matched to the available scenarios by leveraging the generative capabilities of the LLM while enforcing strict JSON output for reliable downstream processing.
 
