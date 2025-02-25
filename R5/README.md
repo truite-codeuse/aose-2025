@@ -86,7 +86,6 @@ The matching algorithm in Role 5 orchestrates a sequence of operations designed 
     - The resulting JSON object is then forwarded to Role 6 via an HTTP POST using `send_to_role6(result_json)`.
 
 ### Pseudocode Representation
-![alt text](images/pseudo_code.png)
 ```python
 def match_scenarios_with_llm(project_id, user_input):
     scenarios = get_project_scenarios(project_id)
@@ -103,7 +102,7 @@ def match_scenarios_with_llm(project_id, user_input):
         else:
             result = formatted_result(project_id, user_input, parsed_result)
     
-    send_to_role6(result)
+    send(result)
     return result
 ```
 This step-by-step algorithm ensures that the user input is accurately matched to the available scenarios by leveraging the generative capabilities of the LLM while enforcing strict JSON output for reliable downstream processing.
