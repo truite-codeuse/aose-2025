@@ -109,6 +109,10 @@ We thus tried to use SBERT and WordNet in particular.
 
 
 
+### Results
+
+Cosine SBERT was best.
+
 ## TODOs
 
 

@@ -1,9 +1,13 @@
 from __future__ import annotations
-from typing import TypedDict
+from typing import TypedDict, TYPE_CHECKING
 from os import environ
 import requests
 
 from dotenv import load_dotenv
+
+if TYPE_CHECKING:
+	from .sentence_matcher import DocumentDict
+
 
 
 ProjectID = str
@@ -18,9 +22,10 @@ ProjectData = TypedDict(
 	},
 	total = True,
 )
+ProjectsDict = dict[ProjectID, ProjectData]
 
 # The elements and options fields should be filled by pinging rAIson
-RAISON_PROJECTS : dict[ProjectID, ProjectData] = {
+RAISON_PROJECTS : ProjectsDict = {
 	"PRJ17225": {
 		"author"      : "Tristan Duquesne",
 		"title"       : "What fair price should buyer pay to seller ?",
@@ -100,6 +105,16 @@ def update_raison_projects_data():
 		elements, options = get_project_data(project_id)
 		RAISON_PROJECTS[project_id]["elements"] = elements
 		RAISON_PROJECTS[project_id]["options"]  = options
+
+def document_dict_from_project_dict(projects: ProjectsDict) -> DocumentDict:
+	result = {
+		project_id: [project["description"]] + project["elements"] + project["options"]
+		for project_id, project in projects.items()
+	}
+	return result
+
+
+
 
 if __name__ == "__main__":
 	update_raison_projects_data()
