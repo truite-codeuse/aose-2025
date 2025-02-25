@@ -26,6 +26,7 @@ In order to function properly, **Role 5** relies on two key inputs that allow it
   
     - **User Input Phrases (`user_input`):**  
     A list of sentences that express the user's requirements or requests.  
+    
     These inputs are typically provided as JSON in a POST request to the `/match` endpoint. A **Pydantic** model ensures that `project_id` is a string and `user_input` is a list of strings, offering basic validation. 
     *Example:* `["I'd like to have my computer repaired."]`
 
@@ -38,6 +39,7 @@ In order to function properly, **Role 5** relies on two key inputs that allow it
     6. The extracted JSON is parsed and returned as a dictionary.
 
 - **Output:**\
+After processing the inputs, Role 5 generates a structured JSON object that encapsulates both the original request and the system’s matching results. 
 The final output is a JSON object that contains:
   - **project_id**: The project identifier.
   - **user_input**: The original user input text.
