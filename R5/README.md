@@ -38,7 +38,7 @@ Below is a global structure for the final output:
     ```json
     {
         "project_id": "PRJID05",
-        "user_input": "The user input text here.",
+        "user_input": ["The user input text here."],
         "matched_scenarios": [
             "scenario1", "scenario2"
         ],
@@ -83,7 +83,7 @@ Below is a global structure for the final output:
 
 To launch the Role 5 service, run the following command in your project directory:
 ```bash
-uvicorn role5_service:app --host 0.0.0.0 --port 8005 --reload
+uvicorn role5_service:app --host 0.0.0.0 --port 8005
 ```
 This starts the service on port **8005**, making the following endpoints available:
 
@@ -177,7 +177,7 @@ You might receive an output like:
 ```json
 {
     "project_id": "PRJ15875",
-    "user_input": "...",
+    "user_input": ["I'd like to have my computer repaired"],
     "matched_scenarios": [
         "repair request"
     ],
