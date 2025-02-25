@@ -86,7 +86,7 @@ The matching algorithm in Role 5 orchestrates a sequence of operations designed 
     - The resulting JSON object is then forwarded to Role 6 via an HTTP POST using `send_to_role6(result_json)`.
 
 ### Pseudocode Representation
-![alt text](images/image.png)
+![alt text](image.png)
 This step-by-step algorithm ensures that the user input is accurately matched to the available scenarios by leveraging the generative capabilities of the LLM while enforcing strict JSON output for reliable downstream processing.
 
 ## Code Structure
