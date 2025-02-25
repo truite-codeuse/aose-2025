@@ -56,6 +56,39 @@ Below is a global structure for the final output:
     ```
     *Note* : The list may include additional scenario names.
 
+## Algorithm 
+
+The matching algorithm in Role 5 orchestrates a sequence of operations designed to retrieve relevant scenarios, construct a suitable prompt, interact with the LLM, and deliver the final results. The process follows these detailed steps:
+### Unified Processing Flow and Algorithm
+
+1. **Scenario Retrieval**
+
+    - **API Call & Metadata Parsing**\
+    The function `get_project_scenarios(project_id)` constructs an endpoint URL (for instance,
+    `https://api.ai-raison.com/executions/PRJ15875/latest`) and calls `get_data_api(url, api_key)` to fetch the project metadata.
+    Next, `extract_elements_and_options(metadata)` parses this metadata to extract scenario labels, retaining only the keys (scenario names) as the list of possible scenarios.
+
+2. **Prompt Construction**
+    - **Instruction & Formatting**\
+    The function `build_prompt(scenarios, user_input)` creates a prompt instructing the LLM to match user requests with the provided scenarios and to return only a strict JSON output. Specifically, the prompt includes:
+        - A clear directive for the LLM.
+        - The list of retrieved scenarios (formatted as a comma-separated string).
+        - The user input phrases.
+
+3. **LLM Invocation and Response Processing**
+    - **Call LLM API**\
+        The function `call_llm(session_id, prompt, host)` sends the prompt to the LLM API (e.g., `http://localhost:8000/generate`), specifying parameters such as `max_new_tokens`, `temperature`, and `repetition_penalty` to shape the generation process.
+    - **Response Handling**\
+        The raw response from the LLM is processed using a regular expression to extract the JSON block. If extraction or parsing fails, the algorithm logs an error and returns an empty `matched_scenarios` list with a relevant message in the `info` field.
+
+4. **Final Output and Forwarding**
+    - After the JSON is successfully parsed, the system enriches the result by adding the original `project_id` and `user_input` fields, and sets the `info` field to empty upon success.
+    - The resulting JSON object is then forwarded to Role 6 via an HTTP POST using `send_to_role6(result_json)`.
+
+### Pseudocode Representation
+![alt text](images/pseudo_code.png)
+This step-by-step algorithm ensures that the user input is accurately matched to the available scenarios by leveraging the generative capabilities of the LLM while enforcing strict JSON output for reliable downstream processing.
+
 ## Code Structure
 
 - **Configuration:**
@@ -86,7 +119,7 @@ Below is a global structure for the final output:
 
 - **Regex Preprocessing:**\
     Before attempting to parse the LLM response, a regex is used to extract only the JSON block from the raw output to handle any extra text returned by the model.
-
+---
 ## Running and Communication
 ### Launching the Service
 
