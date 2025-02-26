@@ -1,7 +1,7 @@
 ## Role 5 - Scenarios Matcher
 
 ### Author
-Role R5; **Nassim Lattab**
+Role R5, **Nassim Lattab**
 
 **Purpose:**
 This script implements Role 5 in our multi-role system. It is responsible for matching user input phrases with scenarios associated with a specific project. More precisely, **Role 5** processes user input to match it against predefined scenarios retrieved from the Ai-Raison API. The process involves receiving a project identifier and user phrases, constructing a detailed prompt for a locally hosted LLM, and finally parsing the response to extract the matched scenarios. All results are formatted in JSON and forwarded to for further processing. 
@@ -18,9 +18,9 @@ The script is as follows:
 
 In our multi-role architecture, **Role 5** handles the scenario matching process:
 
-- **Input:**\
+- **Input:**
 In order to function properly, **Role 5** relies on two key inputs that allow it to fetch relevant scenarios and understand the user’s needs:
-    - **Project Identifier (`project_id`):**\
+    - **Project Identifier (`project_id`):**
     A unique string that is used to query the Ai-Raison API. This API returns project metadata including all available scenarios (elements) and options.  
     *Example:* `"PRJ15875"`
   
@@ -38,7 +38,7 @@ In order to function properly, **Role 5** relies on two key inputs that allow it
     5. The raw LLM output is preprocessed using regex to extract only the JSON block.
     6. The extracted JSON is parsed and returned as a dictionary.
 
-- **Output:**\
+- **Output:**
 After processing the inputs, Role 5 generates a structured JSON object that encapsulates both the original request and the system’s matching results. 
 The final output is a JSON object that contains:
   - **project_id**: The project identifier.
@@ -66,25 +66,25 @@ The matching algorithm in Role 5 orchestrates a sequence of operations designed 
 
 1. **Scenario Retrieval**
 
-    - **API Call & Metadata Parsing**\
+    - **API Call & Metadata Parsing**  
     The function `get_project_scenarios(project_id)` constructs an endpoint URL (for instance,
     `https://api.ai-raison.com/executions/PRJ15875/latest`) and calls `get_data_api(url, api_key)` to fetch the project metadata.
     Next, `extract_elements_and_options(metadata)` parses this metadata to extract scenario labels, retaining only the keys (scenario names) as the list of possible scenarios.
 
 2. **Prompt Construction**
-    - **Instruction & Formatting**\
+    - **Instruction & Formatting**  
     The function `build_prompt(scenarios, user_input)` creates a prompt instructing the LLM to match user requests with the provided scenarios and to return only a strict JSON output. Specifically, the prompt includes:
         - A clear directive for the LLM.
         - The list of retrieved scenarios (formatted as a comma-separated string).
         - The user input phrases.
 
 3. **LLM Invocation and Response Processing**
-    - **Call LLM API**\
+    - **Call LLM API**  
         The function `call_llm(session_id, prompt, host)` sends the prompt to the LLM API (e.g., `http://localhost:8000/generate`), specifying parameters such as `max_new_tokens`, `temperature`, and `repetition_penalty` to shape the generation process.
-    - **Response Handling**\
+    - **Response Handling**  
         The raw response from the LLM is processed using a regular expression to extract the JSON block. If extraction or parsing fails, the algorithm logs an error and returns an empty `matched_scenarios` list with a relevant message in the `info` field.
 
-4. **Final Output and Forwarding**
+4. **Final Output and Forwarding**  
     - After the JSON is successfully parsed, the system enriches the result by adding the original `project_id` and `user_input` fields, and sets the `info` field to empty upon success.
     - The resulting JSON object is then forwarded to the Broker via an HTTP POST.
 
@@ -111,32 +111,33 @@ This step-by-step algorithm ensures that the user input is accurately matched to
 
 ### Code Structure
 
-- **Configuration:**
+- **Configuration:**  
     Sensitive data such as the API key are stored in a separate configuration file `(config.py)`.
     Note: Ensure that this file is excluded from version control (e.g., via .`gitignore`).
 
 - **Functions:**
-    - `extract_elements_and_options(metadata)`\
+    - `extract_elements_and_options(metadata)`  
         Extracts scenario labels (elements) and options from the metadata.
 
-    - `get_data_api(url, api_key)`\
+    - `get_data_api(url, api_key)`  
         Retrieves JSON data from the Ai-Raison API.
 
-    - `get_project_scenarios(project_id)`\
+    - `get_project_scenarios(project_id)`  
         Constructs the URL and extracts a list of scenario labels for the specified project.
 
-    - `build_prompt(scenarios, user_phrases)`\
+    - `build_prompt(scenarios, user_phrases)`  
         Creates a prompt that instructs the LLM to perform scenario matching using only JSON output.
 
-    - `call_llm(session_id, prompt, host)`\
+    - `call_llm(session_id, prompt, host)`  
         Sends the prompt to the local LLM API endpoint and retrieves the response.
 
-    - `match_scenarios_with_llm(project_id, user_phrases)`\
+    - `match_scenarios_with_llm(project_id, user_phrases)`  
         Orchestrates the entire process from retrieving scenarios to parsing the LLM's JSON response.
 
-- **Regex Preprocessing:**\
+- **Regex Preprocessing:**  
     Before attempting to parse the LLM response, a regex is used to extract only the JSON block from the raw output to handle any extra text returned by the model.
----
+
+
 ### Setup Instructions
 #### 0. Cloning the Repository
 
@@ -220,37 +221,39 @@ python test_role5.py
 
 For testing, if you send the following input:
 
-![alt text](images/input_test.png)
+![alt text](https://raw.githubusercontent.com/truite-codeuse/aose-2025/R5/R5/images/input_test.png)
 
 The receive output is:
-![alt text](images/output_test.png)
+
+![alt text](https://raw.githubusercontent.com/truite-codeuse/aose-2025/R5/R5/images/output_test.png)
+
 This JSON output can then be returned to be forwarded once it is configured.
 
 ### Notes
 
-- **Prompt Engineering:**\
+- **Prompt Engineering:**
     The prompt provided to the LLM is crucial. Ensure it clearly instructs the LLM to return only valid JSON and no additional commentary.
 
-- **Error Handling:**\
+- **Error Handling:**
     The script includes basic error handling in case the LLM response cannot be parsed as JSON. You may further enhance this with more robust logging and recovery strategies.
 
-- **Customization:**\
+- **Customization:**
     Adjust the API URLs, generation parameters (e.g., max_new_tokens, temperature), and other configurations according to your environment and requirements.
 
 ### Log Files
 
 Effective logging is critical for monitoring, debugging, and auditing the matching process. In our implementation, logging occurs at several key stages:
 
-- **Request Logging:**\
+- **Request Logging:**
     Log the incoming project_id and user_input with a timestamp when a request is received at the /match endpoint.
 
-- **Prompt and API Call Logging:**\
+- **Prompt and API Call Logging:**
     Log the complete prompt and details of the outgoing LLM API call (including parameters and session ID), as well as the raw LLM output.
 
-- **Response Processing Logging:**\
+- **Response Processing Logging:**
     Log the result of the regex extraction and JSON parsing. If errors occur, log the error details and problematic output.
 
-- **Forwarding Logging:**\
+- **Forwarding Logging:**
     Log the final JSON result before it is returned, along with any errors encountered during the HTTP POST.
 
 This streamlined logging approach ensures essential traceability without excessive repetition, allowing issues to be quickly identified and resolved.
@@ -266,5 +269,3 @@ This detailed logging strategy provides full traceability of the entire matching
 ### R5 Conclusion
 
 In summary, **Role 5** serves as a critical component within our multi-role architecture, bridging user input and project-specific scenarios through an LLM-based matching process. By leveraging the Ai-Raison API to retrieve scenario labels and constructing a clear, instructive prompt, this service ensures that user requests are accurately classified. Robust logging, strict JSON output handling, and optional error recovery measures further enhance reliability. Once Role 5 completes its matching task, it seamlessly forwards the results to the Broker, integrating smoothly with the broader system. This design promotes modularity, scalability, and maintainability, enabling future enhancements or customizations without disrupting the core functionality.
-
----
