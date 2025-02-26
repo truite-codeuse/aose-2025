@@ -79,6 +79,13 @@ class PayloadFor_SentenceMatcher(BaseModel):
 	alpha      : float                  | None
 	epsilon    : float                  | None
 
+class PayloadFor_rAIsonAdapter(BaseModel):  # corresponds to MatchRequest in R6
+	project_id: str
+	user_input: list[str]
+	matched_scenarios: list[str]
+	info: str
+
+
 class RawUserInput(BaseModel):
 	user_input : str
 	get_max    : bool  = False
@@ -120,7 +127,49 @@ def call_R2_for_scenario_matching_best_match(user_input : str) -> PayloadFor_Sce
 	result = PayloadFor_ScenarioMatchingAgent(**best_match)
 	return result
 
+def call_R2_for_project_data() -> ProjectsDict:
+	route = "project_data"
+	headers = {"Content-Type": "application/json"}
+	response = requests.get(f"http://localhost:{PORT_R2}/{route}", headers = headers)
+	response.raise_for_status()
+	result = response.json()
+	return result
 
+def call_R4_check_query(session_id : str, user_input : str) -> bool:
+	route = "classify_input"
+	headers = {"Content-Type": "application/json"}
+	body = {"session_id": session_id, "user_message": user_input}
+	response = requests.post(f"http://localhost:{PORT_R4}/{route}", headers = headers, json = body)
+	response.raise_for_status()
+	result = response.json()
+	return result
+
+def call_R1_simple(session_id : str, user_input : str) -> str:
+	route = "generate"
+	headers = {"Content-Type": "application/json"}
+	body = {"session_id": session_id, "user_message": user_input}
+	response = requests.post(f"http://localhost:{PORT_R1}/{route}", headers = headers, json = body)
+	response.raise_for_status()
+	result = response.json()["response"]
+	return result
+
+def call_R5_for_scenario_matching(payload : PayloadFor_ScenarioMatchingAgent) -> PayloadFor_rAIsonAdapter:
+	route = "match"
+	headers = {"Content-Type": "application/json"}
+	body = payload
+	response = requests.post(f"http://localhost:{PORT_R5}/{route}", headers = headers, json = body)
+	response.raise_for_status()
+	result = PayloadFor_rAIsonAdapter(**response.json())
+	return result
+
+def call_R6_for_raison(payload: PayloadFor_rAIsonAdapter) -> str:
+	route = "find_solution"
+	headers = {"Content-Type": "application/json"}
+	body = payload
+	response = requests.post(f"http://localhost:{PORT_R6}/{route}", headers = headers, json = body)
+	response.raise_for_status()
+	result = response.json()["text"]
+	return result
 
 
 
@@ -189,11 +238,24 @@ def middleware_pipeline(
 			current_status = "casual_chat_return_llm_response"
 			result = text_response
 		elif current_status == "query_chat_call_sentence_matcher_for_ad_agent":
-			ranked_matched_services = call_R2_for_ad(user_input)
-			current_status = "query_chat_call_ad_agent"
-			ad_text = call_R8_for_ad(session_id, ranked_matched_services)
-			current_status = "query_chat_return_llm_ad_response"
-			result = ad_text + "\nPlease let me know which of these interests you."
+			# ranked_matched_services = call_R2_for_ad(user_input)
+			# current_status = "query_chat_call_ad_agent"
+			# ad_text = call_R8_for_ad(session_id, ranked_matched_services)
+			matches = call_R2_for_scenario_matching_all_matches(user_input, threshold = 0.4)
+			if len(matches) == 0:
+				result = (
+					"I'm sorry, I couldn't find any relevant services that could help you. "
+					"But maybe I could help you with something else ?"
+				)
+				current_status = "check_casual_or_query"
+			else:
+				projects_desc = [PROJECTS_DATA[match.project_id]["description"] for match in matches]
+				ad_text = "Hm, I think you might be interested in some of our services !\n" + "\n".join(projects_desc)
+				result = (
+					ad_text + "\n\nPlease let me know if any of these might interest you, and "
+					"also tell us how we could be of help (describe your situation)."
+				)
+				current_status = "query_chat_return_llm_ad_response"
 		else:
 			raise ValueError(f"Invalid current status: {current_status}")
 	elif current_status == "query_chat_call_sentence_matcher_for_service_agent_id":
@@ -242,5 +304,6 @@ def pipeline_endpoint(request: BrokerPayload):
 
 
 if __name__ == "__main__":
+	PROJECTS_DATA : ProjectsDict = call_R2_for_project_data()
 	ONGOING_STATUSES : dict[SessionID, SessionStatus] = {}
 	uvicorn.run(app, host="0.0.0.0", port=PORT_R10)
