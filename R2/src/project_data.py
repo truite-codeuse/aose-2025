@@ -14,7 +14,7 @@ ProjectID = str
 ProjectData = TypedDict(
 	"ProjectData",
 	{
-		"author"      : str | tuple[str,str],
+		"author"      : str | tuple[str,str] | tuple[str,str,str],
 		"title"       : str,
 		"description" : str,
 		"elements"    : list[str], # scenarios
@@ -36,13 +36,6 @@ RAISON_PROJECTS : ProjectsDict = {
 			"different alternative outcomes as to how the conflict between the buying and the selling "
 			"party should be resolved."
 		),
-		"elements"    : [],
-		"options"     : [],
-	},
-	"PRJ17775": {
-		"author"      : "Kamilia Benlamara",
-		"title"       : "TODO",
-		"description" : "TODO",
 		"elements"    : [],
 		"options"     : [],
 	},
@@ -68,15 +61,64 @@ RAISON_PROJECTS : ProjectsDict = {
 		),
 		"elements"    : [],
 		"options"     : [],
-	}
-	# "Thanina Ait Ferhat"
-	# "Lynda Benkerrou"
-	# "Maram Beddouihech"
-	# "Cheikh Tidiane Diouf"
-	# "Florian Posez"
-	# "Theophile Romieu"
-	# "Abdou Aziz Thiam"
-	# "Latifou Yaya"
+	},
+	"PRJ17575" : {
+		"author" : ("Thanina Ait Ferhat", "Lynda Benkerrou", "Maram Beddouihech"),
+		"title": "ARG",
+		"description": (
+			"A Leave Management System that enhances the processing of employee leave "
+			"requests with a focus on conditional decision-making within an organization. "
+			"The system ensures that leave approvals are compliant with varying organizational "
+			"policies tailored to different types of leave."
+		),
+		"elements": [],
+		"options": [],
+	},
+	"PRJ17775" : {
+		"author" : "Kamilia Benlamara",
+		"title" : "Claim Resolver",
+		"description" : (
+			"This project provides an automated decision-making system to manage customer "
+			"claims efficiently by generating automatic responses such as rejection, replacement, "
+			"or refund. The system evaluates each claim scenario according to predefined conditions, "
+			"including proof validity, stock availability, and adherence to deadlines, ensuring "
+			"fair, consistent, and transparent outcomes."
+		),
+		"elements" : [],
+		"options" : [],
+	},
+	"PRJ15425": {
+		"author": "Cheikh Tidiane Diouf",
+		"title": "Remboursement",
+		"description": (
+			"Reimbursement of employees' transportation tickets in a company involves covering part or all "
+			"of their commuting expenses. This policy helps reduce travel costs for employees using public "
+			"transport or other eligible transportation methods."
+		),
+		"elements": [],
+		"options": [],
+	},
+	"PRJ12375": {
+		"author": ("Latifou Yaya", "Abdou Aziz Thiam"),
+		"title": "Automatisation des Services RH : Tri Automatique des CVs",
+		"description": (
+			"This project aims to automate the CV sorting process to optimize recruitment procedures and "
+			"help human resources (HR) offices gain time. "
+		),
+		"elements": [],
+		"options": [],
+	},
+	"PRJ17525": {
+		"author": ("Florian Posez", "Theophile Romieu"),
+		"title": "Bluesky Automod",
+		"description": (
+			"Automatic moderation for Bluesky. Detects skeets on a webpage and decides if the skeet "
+			"should be moderated (hidden) or not given some conditions (banwords, followed accounts, "
+			"virality, etc.)."
+		),
+		"elements": [],
+		"options": [],
+	},
 }
 
 
