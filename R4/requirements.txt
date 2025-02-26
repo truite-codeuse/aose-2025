@@ -1,0 +1,6 @@
+Python 3.7+
+PostgreSQL
+FastAPI
+SQLAlchemy
+Pydantic
+Requests
