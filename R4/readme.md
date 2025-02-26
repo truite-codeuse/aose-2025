@@ -52,7 +52,7 @@ pip install -r requirements.txt
 Ensure that you have a PostgreSQL instance running. Create a new database and update the DATABASE_URL in the .env file with the appropriate credentials.
 
 
-# Example DATABASE_URL in .env file
+### Example DATABASE_URL in .env file
 ```bash
 DATABASE_URL=postgresql://user:password@localhost:5432/db_name
 ```
@@ -69,7 +69,7 @@ uvicorn app.role4_service:app --reload
 ```
 The application will be available at http://127.0.0.1:8004.
 
-6. API Endpoints
+##6. API Endpoints
 To test the /process_input endpoint, you can send a POST request with the following JSON body:
 
 ```bash
@@ -89,7 +89,6 @@ curl -X 'POST' \
   "user_message": "Can you help me choose a restaurant?"
 }'
 ```
-** Response Format**
 The response will be a JSON object with the following structure:
 
 ```json
