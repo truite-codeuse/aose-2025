@@ -2,7 +2,7 @@
 
 This API is used to initialize an argumentation agent by fetching scenarios and options for a project from the **Ai-Raison** API.
 
-## 🛠️ Prerequisites
+## Prerequisites
 
 Before running the API, ensure you have the following:
 
