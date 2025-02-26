@@ -71,7 +71,7 @@ The application will be available at http://127.0.0.1:8004.
 
 ## API Endpoints
 
-To test the /process_input endpoint, you can send a POST request with the following JSON body:
+To test the `/process_input` endpoint, you can send a POST request with the following JSON body:
 
 ```bash
 {
