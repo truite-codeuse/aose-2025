@@ -20,4 +20,6 @@ Assurez-vous d'avoir `pip` installé et exécutez la commande suivante pour inst
 
 ### Étape 2 : Créer le fichier config.py
 Dans le même dossier que main.py, créez un fichier config.py contenant votre clé API.
+  ```python
    api_key = "VOTRE_CLE_API_ICI"
+Remplacez "VOTRE_CLE_API_ICI" par la clé API que vous avez obtenue auprès de Ai-Raison.
