@@ -28,6 +28,7 @@ Replace "YOUR_API_KEY_HERE" with the API key you received from Ai-Raison.
 
 ### Step 3: Run the API
 Run the API with the following command:
+
     ```bash
     uvicorn main:app --host 0.0.0.0 --port 8007 --reload
     
