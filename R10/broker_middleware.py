@@ -1,0 +1,210 @@
+from typing import TypedDict, Literal
+import requests
+
+from fastapi import FastAPI
+from pydantic import BaseModel
+
+
+PORT_R1 = 8000
+PORT_R2 = 8002
+PORT_R5 = 8005
+PORT_R6 = 8006
+
+# Copy-pasted from R2
+
+ProjectID = str
+ProjectData = TypedDict(
+	"ProjectData",
+	{
+		"author"      : str | tuple[str,str],
+		"title"       : str,
+		"description" : str,
+		"elements"    : list[str], # scenarios
+		"options"     : list[str],
+	},
+	total = True,
+)
+ProjectsDict = dict[ProjectID, ProjectData]
+
+InputText       = list[str]
+DocumentID      = str
+DocumentContent = list[str]
+DocumentDict    = dict[DocumentID, DocumentContent]
+ScoresDict      = dict[ProjectID, float]
+
+SentenceModel_Literal = Literal[
+	"sbert",
+	"google-use-large",
+	"google-use-lite",
+]
+LexiconModel_Literal  = Literal[
+	"wordnet",
+	"word2vec",
+	"glove",
+]
+ModelQueryKey = SentenceModel_Literal | LexiconModel_Literal
+
+MeanMode_Literal = Literal[
+	"arithmetic",
+	"softmax",
+	"harmonic",
+]
+WNDistanceMode_Literal = Literal[
+	"path",
+	"leacock-chodorow",
+	"wu-palmer",
+	"resnik",
+	"jiang-conrath",
+	"lin",
+]
+
+class PayloadFor_AdAgent(BaseModel):
+	user_input   : str
+	similarities : ScoresDict
+
+class PayloadFor_ScenarioMatchingAgent(BaseModel):  # corresponds to MatchRequest in R5
+	project_id: ProjectID
+	user_input: list[str]
+
+class PayloadFor_SentenceMatcher(BaseModel):
+	user_input : str
+	documents  : DocumentDict           | None
+	model      : ModelQueryKey          | None
+	mean_mode  : MeanMode_Literal       | None
+	dist_mode  : WNDistanceMode_Literal | None
+	alpha      : float                  | None
+	epsilon    : float                  | None
+
+class RawUserInput(BaseModel):
+	user_input : str
+	get_max    : bool  = False
+	threshold  : float = 0.5
+
+
+
+def call_R2_for_ad(user_input : str) -> PayloadFor_AdAgent:
+	route = "match_for_ad"
+	headers = {"Content-Type": "application/json"}
+	body = {"user_input": user_input}
+	response = requests.post(f"http://localhost:{PORT_R2}/{route}", headers = headers, json = body)
+	response.raise_for_status()
+	result = PayloadFor_AdAgent(**response.json())
+	return result
+
+def call_R2_for_scenario_matching_all_matches(
+	user_input : str,
+	threshold  : float = 0.5,
+) -> list[PayloadFor_ScenarioMatchingAgent]:
+	route = "match_for_scenario"
+	headers = {"Content-Type": "application/json"}
+	body_obj = RawUserInput(user_input = user_input, threshold = threshold)
+	body = body_obj.model_dump()
+	response = requests.post(f"http://localhost:{PORT_R2}/{route}", headers = headers, json = body)
+	response.raise_for_status()
+	result = [PayloadFor_ScenarioMatchingAgent(**match_data) for match_data in response.json()]
+	return result
+
+def call_R2_for_scenario_matching_best_match(user_input : str) -> PayloadFor_ScenarioMatchingAgent:
+	route = "match_for_scenario"
+	headers = {"Content-Type": "application/json"}
+	body_obj = RawUserInput(user_input = user_input)
+	body_obj.get_max = True
+	body = body_obj.model_dump()
+	response = requests.post(f"http://localhost:{PORT_R2}/{route}", headers = headers, json = body)
+	response.raise_for_status()
+	best_match = response.json()[0]
+	result = PayloadFor_ScenarioMatchingAgent(**best_match)
+	return result
+
+
+
+
+
+#################
+# Main pipeline #
+#################
+
+SessionID = str
+SessionStatus = Literal[
+	"check_casual_or_query",
+	"casual_chat_call_llm",
+	"casual_chat_return_llm_response",
+	"query_chat_call_sentence_matcher_for_ad_agent",
+	"query_chat_call_ad_agent",
+	"query_chat_return_llm_ad_response",
+	"query_chat_call_sentence_matcher_for_service_agent_id",
+	"query_chat_call_scenario_recognizing_agent",
+	"query_chat_call_raison_adapter",
+	"query_chat_return_raison_response",
+]
+
+
+def middleware_pipeline(
+	session_id : SessionID,
+	user_input : str,
+)-> str:
+	"""
+	Orchestrates the entire pipeline:
+	- if in the "check_casual_or_query" mode, calls R4 to see whther the user is
+	   just talking or asking for help
+	- if in the "casual_chat_call_llm" mode, calls R1 LLM to generate a response
+	- if in the "casual_chat_return_llm_response" mode, returns the LLM response to GUI
+	- if in the "query_chat_call_sentence_matcher_for_ad_agent" mode, calls R2 to
+	   match the user input with project descriptions
+	- if in the "query_chat_call_ad_agent" mode, calls R8 to get the ad for the relevant services
+	- if in the "query_chat_return_llm_ad_response" mode, returns the R8 response to GUI
+	- if in the "query_chat_call_sentence_matcher_for_service_agent_id" mode, calls R2 to
+	    get the matching project ID
+	- if in the "query_chat_call_scenario_recognizing_agent" mode, calls R5 to match the user
+	    input with scenarios
+	- if in the "query_chat_call_raison_adapter" mode, calls R6 to get run the scenario choice on rAIson
+	- if in the "query_chat_return_raison_response" mode, returns the R6 response to GUI
+	"""
+	if session_id not in ONGOING_STATUSES:
+		ONGOING_STATUSES[session_id] = "check_casual_or_query"
+	previous_status = ONGOING_STATUSES[session_id]
+	current_status : SessionStatus
+	if previous_status in [
+		"check_casual_or_query",
+		"casual_chat_return_llm_response",
+		"query_chat_return_raison_response",
+	]:
+		current_status = "check_casual_or_query"
+	elif previous_status == "query_chat_return_llm_ad_response":
+		current_status = "query_chat_call_sentence_matcher_for_service_agent_id"
+	else:
+		raise ValueError(f"Invalid previous status: {previous_status}")
+	if current_status == "check_casual_or_query":
+		bool_response = call_R4_check_query(session_id, user_input)
+		if bool_response:
+			current_status = "query_chat_call_sentence_matcher_for_ad_agent"
+		else:
+			current_status = "casual_chat_call_llm"
+		if current_status == "casual_chat_call_llm":
+			text_response = call_R1_simple(session_id, user_input)
+			current_status = "casual_chat_return_llm_response"
+			result = text_response
+		elif current_status == "query_chat_call_sentence_matcher_for_ad_agent":
+			ranked_matched_services = call_R2_for_ad(user_input)
+			current_status = "query_chat_call_ad_agent"
+			ad_text = call_R8_for_ad(session_id, ranked_matched_services)
+			current_status = "query_chat_return_llm_ad_response"
+			result = ad_text
+		else:
+			raise ValueError(f"Invalid current status: {current_status}")
+	elif current_status == "query_chat_call_sentence_matcher_for_service_agent_id":
+		best_matched_service = call_R2_for_scenario_matching_best_match(user_input)
+		current_status = "query_chat_call_scenario_recognizing_agent"
+		scenarios = call_R5_for_scenario_matching(best_matched_service)
+		current_status = "query_chat_call_raison_adapter"
+		raison_response = call_R6_for_raison(scenarios)
+		current_status = "query_chat_return_raison_response"
+		result = raison_response
+	else:
+		raise ValueError(f"Invalid current status: {current_status}")
+	ONGOING_STATUSES[session_id] = current_status
+	return result
+
+
+if __name__ == "__main__":
+	ONGOING_STATUSES : dict[SessionID, SessionStatus] = {}
