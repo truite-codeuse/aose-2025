@@ -1,9 +1,15 @@
-# R4 - Process User Input
+## Process User Input
+### Author
+Role R4: Thanina AIT FERHAT
+ 
 
 This is a FastAPI application designed to process user input and classify it as either a casual conversation or a service request. The application interacts with two APIs:
 
-1. **R1 API**: A language model API that classifies the user's input and generates responses based on the type of interaction.
-2. **Broker API**: An API that processes decision-making requests from users, helping to make informed decisions based on their input.
+### 1. **R1 API**
+A language model API that classifies the user's input and generates responses based on the type of interaction.
+
+### 2. **Broker API**
+An API that processes decision-making requests from users, helping to make informed decisions based on their input.
 
 The application saves conversation histories in a PostgreSQL database, which can be queried to retrieve the conversation history for a given session.
 
@@ -23,6 +29,7 @@ The application saves conversation histories in a PostgreSQL database, which can
 - SQLAlchemy
 - Pydantic
 - Requests
+
 
 ## Setup
 
@@ -60,7 +67,7 @@ To start the FastAPI server, run:
 ```bash
 uvicorn app.main:app --reload
 ```
-The application will be available at http://127.0.0.1:8000.
+The application will be available at http://127.0.0.1:8004.
 
 6. Testing the API
 To test the /process_input endpoint, you can send a POST request with the following JSON body:
@@ -75,7 +82,7 @@ Example cURL request:
 
 ```bash
 curl -X 'POST' \
-  'http://127.0.0.1:8000/process_input' \
+  'http://127.0.0.1:8004/process_input' \
   -H 'Content-Type: application/json' \
   -d '{
   "session_id": "session123",
