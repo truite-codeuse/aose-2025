@@ -220,10 +220,10 @@ python test_role5.py
 
 For testing, if you send the following input:
 
-![alt text](images/input_test.png)
+![alt text](./R5/images/input_test.png)
 
 The receive output is:
-![alt text](images/output_test.png)
+![alt text](./R5/images/output_test.png)
 This JSON output can then be returned to be forwarded once it is configured.
 
 ### Notes

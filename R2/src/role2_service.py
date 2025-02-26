@@ -11,6 +11,7 @@ from .project_data     import (
 	RAISON_PROJECTS,
 	update_raison_projects_data,
 	document_dict_from_project_dict,
+	ProjectsDict,
 )
 from .sentence_matcher import (
 	DocumentDict,
@@ -55,7 +56,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins     = ["*"],  # Change this to the origin(s) of your React app
     allow_credentials = True,
-    allow_methods     = ["POST"],
+    allow_methods     = ["GET", "POST"],
     allow_headers     = ["*"],
 )
 
@@ -128,6 +129,12 @@ def match_scenario_endpoint(request: RawUserInput):
 	]
 	return result
 
+@app.get("/project_data", response_model=ProjectsDict)
+def get_project_data():
+	"""
+	Returns the data of all projects.
+	"""
+	return RAISON_PROJECTS
 
 if __name__ == "__main__":
 	PORT   = 8002
