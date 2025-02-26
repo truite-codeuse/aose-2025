@@ -2,6 +2,7 @@ import os
 import datetime
 import logging
 import requests
+import uvicorn
 from fastapi import FastAPI, Body, Depends, HTTPException
 from sqlalchemy import create_engine, Column, Integer, String, DateTime
 from sqlalchemy.ext.declarative import declarative_base
@@ -159,5 +160,5 @@ def classify_user_input(user_input: UserInput) -> bool:
     return input_type == "decision"
 
 if __name__ == "__main__":
-    import uvicorn
+    
     uvicorn.run("app.main:app", host="0.0.0.0", port=8004, reload=False)
