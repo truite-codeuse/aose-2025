@@ -1,25 +1,30 @@
 # R7 - Argumentation Agent Initialization API
 
-Cette API permet d'initialiser un agent d'argumentation en récupérant les scénarios et options d'un projet depuis l'API **Ai-Raison**.
+This API is used to initialize an argumentation agent by fetching scenarios and options for a project from the **Ai-Raison** API.
 
-## Prérequis
+## 🛠️ Prerequisites
 
-Avant de démarrer l'API, assurez-vous d'avoir les éléments suivants :
+Before running the API, ensure you have the following:
 
-- **Python 3.11 ou supérieur** : Assurez-vous d'avoir Python installé sur votre machine.
-- **Clé API** pour accéder à l'API **Ai-Raison** : Vous devez disposer d'une clé API valide.
+- **Python 3.11 or higher**: Ensure Python is installed on your machine.
+- **API Key** for accessing the **Ai-Raison** API: You need to have a valid API key.
 
 ## 🏁 Installation
 
-### Étape 1 : Installer les dépendances
+### Step 1: Install dependencies
 
-Assurez-vous d'avoir `pip` installé et exécutez la commande suivante pour installer les dépendances nécessaires à l'API.
+Ensure that `pip` is installed, then run the following command to install the required dependencies:
 
     ```bash
-     pip install fastapi uvicorn requests
+    pip install fastapi uvicorn requests
 
-### Étape 2 : Créer le fichier config.py
-Dans le même dossier que main.py, créez un fichier config.py contenant votre clé API.
-  ```python
-   api_key = "VOTRE_CLE_API_ICI"
-Remplacez "VOTRE_CLE_API_ICI" par la clé API que vous avez obtenue auprès de Ai-Raison.
+### Step 2: Create the config.py file
+In the same directory as main.py, create a config.py file containing your API key.
+
+    ``` python
+    api_key = "YOUR_API_KEY_HERE"
+    
+Replace "YOUR_API_KEY_HERE" with the API key you received from Ai-Raison.
+
+### Step 3: Run the API
+Run the API with the following command:
