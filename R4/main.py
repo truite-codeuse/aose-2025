@@ -1,14 +1,17 @@
 import os
 import datetime
-import openai
-import torch
-from fastapi import FastAPI, Body, Depends
-from pydantic import BaseModel
+import logging
+from fastapi import FastAPI, Body, Depends, HTTPException
 from sqlalchemy import create_engine, Column, Integer, String, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
-from typing import Dict, Any
-import uvicorn
+from pydantic import BaseModel
+
+# ---------------------------
+# Logging Setup
+# ---------------------------
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # ---------------------------
 # Database Setup (PostgreSQL)
@@ -49,81 +52,78 @@ def get_session_history(db: Session, session_id: str):
     return [(msg.role, msg.text) for msg in messages]
 
 # ---------------------------
-# LLM Setup (Local vs Remote)
+# FastAPI Application Setup
 # ---------------------------
-LLM_LOCAL = False  # Set to True for local LLM call, False for remote LLM call
+app = FastAPI(title="R4 - Process User Input", description="Detects user input type: conversation or service request", version="1.0.0")
 
-# Initialize the OpenAI GPT-3 or GPT-4 API Key
-openai.api_key = "YOUR_OPENAI_API_KEY"  # Remplace par ta clé API OpenAI
+# Pydantic model for the user input
+class UserInput(BaseModel):
+    session_id: str
+    user_message: str
 
-# Function to call GPT-3 or GPT-4 via OpenAI API
-def call_LLM_remote(prompt_str: str) -> str:
+# Function to detect if the message is a casual conversation or service request
+def is_casual_conversation(user_message: str) -> bool:
     """
-    Calls the GPT-3 or GPT-4 model via the OpenAI API to generate a response.
+    Detects if the message from the user is a casual conversation or a service request.
     """
-    response = openai.Completion.create(
-        model="gpt-4",  # Utilise GPT-4, tu peux aussi utiliser "gpt-3.5-turbo" si tu préfères GPT-3.5
-        prompt=prompt_str,
-        max_tokens=200,  # Max tokens for response
-        temperature=0.7,  # Randomness (0.7 for creativity)
-        top_p=1,  # Control the diversity of the generated text (optional)
-        frequency_penalty=0,  # Penalty for repetition
-        presence_penalty=0,  # Penalty to avoid repeating similar concepts
-    )
-    return response.choices[0].text.strip()
-
-# ---------------------------
-# FastAPI Setup
-# ---------------------------
-app = FastAPI(
-    title="LLM Agent – Process User Input",
-    description="This API processes user input to determine if it is a casual conversation or a request for service.",
-    version="1.0.0",
-)
-
-# Function to build the prompt to distinguish conversation types
-def build_prompt(user_message: str) -> str:
-    """
-    Creates a prompt to determine if the user's message is a casual conversation or a service request.
-    """
-    prompt = f"""
-    Here's the user's message: "{user_message}"
-    Please determine if this message is a casual conversation or a service request.
-
-    If it's a casual conversation (e.g., a greeting or informal question), reply with "False".
-    If it's a service request (e.g., asking for help or a service), reply with "True".
-    """
-    return prompt
-
-# Pydantic model for receiving the message
-class UserMessage(BaseModel):
-    message: str
-
-# Endpoint for processing the user input
-@app.post("/process_message", response_model=Dict[str, Any])
-def process_message(data: UserMessage):
-    """
-    This function receives a user message, creates a prompt, and uses GPT-3 or GPT-4 to determine if the message
-    is a casual conversation or a service request.
-    """
-    user_message = data.message
-    prompt = build_prompt(user_message)
+    casual_keywords = ["hello", "hi", "how are you", "how's it going", "tell me"]
+    decision_keywords = ["which service", "help me", "decision", "choose", "recommend"]
     
-    # Call GPT-3 or GPT-4 via OpenAI API
-    response_text = call_LLM_remote(prompt)
+    # Check if the message contains keywords related to casual conversation
+    if any(keyword in user_message.lower() for keyword in casual_keywords):
+        return False  # Casual conversation
+    # Check if the message contains keywords related to a service request
+    if any(keyword in user_message.lower() for keyword in decision_keywords):
+        return True  # Service request
+    return False  # Default to casual conversation if no match
 
-    # The model should respond with "True" or "False" based on message type
-    if "True" in response_text:
-        return {"is_service_request": True}
-    else:
-        return {"is_service_request": False}
-
-# Health check endpoint
 @app.get("/health", summary="Check Health of the Service")
 def health_check():
     """Return a simple JSON indicating the service is online."""
     return {"status": "OK"}
 
-# Run the FastAPI application with Uvicorn
+@app.post("/process_input", summary="Process user input for casual talk or decision making")
+def process_user_input(
+    user_input: UserInput,
+    db: Session = Depends(get_db),
+):
+    """
+    This function processes the user's input and determines whether it's a casual conversation
+    or a request for a service. It responds with a boolean and stores the interaction in the database.
+    """
+    try:
+        # Detect whether the user input is a casual conversation or a service request
+        is_service_request = is_casual_conversation(user_input.user_message)
+        
+        # Save the user's message to the database
+        user_msg = Message(session_id=user_input.session_id, role="user", text=user_input.user_message)
+        db.add(user_msg)
+        db.commit()
+        db.refresh(user_msg)
+        
+        # Prepare the response based on the detected message type
+        if is_service_request:
+            response_text = "C'est une requête de service."
+        else:
+            response_text = "C'est une conversation normale."
+        
+        # Save the assistant's response in the database
+        assistant_msg = Message(session_id=user_input.session_id, role="assistant", text=response_text)
+        db.add(assistant_msg)
+        db.commit()
+        db.refresh(assistant_msg)
+        
+        # Return the response with a boolean and the assistant's message
+        return {
+            "is_service_request": is_service_request,  # True for service request, False for casual conversation
+            "response": response_text,  # Explanation text
+            "session_id": user_input.session_id,
+        }
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error processing user input: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    import uvicorn
+    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=False)
