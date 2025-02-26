@@ -1,10 +1,10 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import Dict, List
-import requests
+import logging
+from api import fetch_advertisements, send_to_nassim
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-import logging
 
 # Configuration des logs
 logging.basicConfig(level=logging.INFO)
@@ -18,22 +18,6 @@ class UserRequest(BaseModel):
 
 # Seuil de similarité configurable
 SIMILARITY_THRESHOLD = 0.3  # Ajuste ce seuil selon tes besoins
-
-# Fonction pour récupérer les publicités des agents d'argumentation (R8)
-def fetch_advertisements():
-    """
-    Récupère les publicités des agents d'argumentation (R8) via une API.
-    """
-    try:
-        response = requests.get("http://127.0.0.1:8004/advertisements")  # URL de l'API R8
-        if response.status_code == 200:
-            return response.json()  # Retourne les publicités sous forme de dictionnaire
-        else:
-            logger.error(f"Erreur lors de la récupération des publicités : {response.status_code}")
-            return {}
-    except Exception as e:
-        logger.error(f"Exception lors de la récupération des publicités : {e}")
-        return {}
 
 # Fonction pour calculer la similarité cosinus
 def calculate_similarity(user_prompt: str, service_description: str) -> float:
