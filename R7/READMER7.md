@@ -15,8 +15,8 @@ Avant de démarrer l'API, assurez-vous d'avoir les éléments suivants :
 
 Assurez-vous d'avoir `pip` installé et exécutez la commande suivante pour installer les dépendances nécessaires à l'API.
 
-```bash
-pip install fastapi uvicorn requests
+    ```bash
+     pip install fastapi uvicorn requests
 
 ### Étape 2 : Créer le fichier config.py
 Dans le même dossier que main.py, créez un fichier config.py contenant votre clé API.
