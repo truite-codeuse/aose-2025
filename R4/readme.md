@@ -105,13 +105,32 @@ This endpoint receives a `UserInput` object containing the user's session ID and
 
 
 To use this endpoint, send a POST request with the following JSON body:
-
 ```json
 {
   "session_id": "session123",
   "user_message": "Can you help me choose a restaurant?"
-}```
+}
+```
+Example cURL request:
+```bash
+{
+curl -X 'POST' \
+  'http://127.0.0.1:8000/classify_input' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "session_id": "session123",
+  "user_message": "Can you help me choose a restaurant?"
+}
+```
+Response
+The response will be a boolean indicating whether the user's input is a service request (true) or a casual conversation (false).
 
+Example Response:
+```json
+{
+true
+}
+````
 ## 1. Classify User Input
 The application starts by classifying the user's input using the `classify_input` function. This function determines whether the input corresponds to:
 
