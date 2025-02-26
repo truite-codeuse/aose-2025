@@ -132,6 +132,7 @@ def match_scenario_endpoint(request: RawUserInput):
 if __name__ == "__main__":
 	PORT   = 8002
 	MODELS = load_all_models()
+	print("SUCCESS: Loaded models")
 	update_raison_projects_data()
 	print(RAISON_PROJECTS)
-	uvc_run(app, port=PORT, host="0.0.0.0", reload=True)
+	uvc_run(app, port=PORT, host="0.0.0.0")

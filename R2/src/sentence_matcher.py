@@ -34,8 +34,8 @@ ScoresDict      = dict[ProjectID, float]
 
 SentenceModel_Literal = Literal[
 	"sbert",
-	"google-use-large",
-	"google-use-lite",
+#	"google-use-large",
+#	"google-use-lite",
 ]
 LexiconModel_Literal  = Literal[
 	"wordnet",
@@ -381,8 +381,8 @@ def load_sentence_model(model_literal : SentenceModel_Literal) -> SentenceModel:
 	result : SentenceModel
 	if   model_literal == "sbert"            : result = SentenceTransformer(SBERT_MODEL_STR)
 	# TODO fix
-	elif model_literal == "google-use-lite"  : result = hub.load(GUSE_MODEL_STR_LITE ).signatures['default']
-	elif model_literal == "google-use-large" : result = hub.load(GUSE_MODEL_STR_LARGE)
+	# elif model_literal == "google-use-lite"  : result = hub.load(GUSE_MODEL_STR_LITE ).signatures['default']
+	# elif model_literal == "google-use-large" : result = hub.load(GUSE_MODEL_STR_LARGE)
 	else: raise ValueError(f"Invalid sentence model {model_literal}")
 	return result
 
@@ -401,8 +401,8 @@ def load_all_models() -> ModelsDict_Both:
 	nltk.download('punkt')	  # Punkt tokenizer; necessary for sentence tokenization
 	sentence_models : ModelsDict_Sentence = {
 		"sbert"           : load_sentence_model("sbert"),
-		"google-use-lite" : load_sentence_model("google-use-lite"),
-		"google-use-large": load_sentence_model("google-use-large"),
+	#	"google-use-lite" : load_sentence_model("google-use-lite"),
+	#	"google-use-large": load_sentence_model("google-use-large"),
 	}
 	lexicon_models : ModelsDict_Lexicon = {
 		"word2vec": load_lexicon_model("word2vec"),

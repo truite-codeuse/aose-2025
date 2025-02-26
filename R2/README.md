@@ -37,7 +37,7 @@ SBERT (Sentence Bidirectional Encoder Representations from Transformers) is a tr
 
 ##### Universal Sentence Encoder (USE)
 
-Similar to SBERT, Google's USE is a powerful model also used for sentence embedding. It has a large and a lite version. Info about this model can be found here https://www.kaggle.com/models/google/universal-sentence-encoder/tensorFlow2 . We did not manage to get it to work though.
+Similar to SBERT, Google's USE is a powerful model also used for sentence embedding. It has a large and a lite version. Info about this model can be found here https://www.kaggle.com/models/google/universal-sentence-encoder/tensorFlow2 . We did not manage to get it to work though. The code for it is available, but commented, as loading these models is quite slow.
 
 ##### WordNet
 
@@ -109,7 +109,7 @@ InferSent
 
 ### Implementation
 
-Because we wanted to aim for speed, cheapness, measurability and consistency, we thus concentrated our efforts on non-LLM approaches. We provided studied 2 lexicon-based approaches (synset distances and word embeddings) and 1 sentence-based approach (SBERT). We also tried to use Google USE, but failed to get it working.
+Because we wanted to aim for speed, cheapness, measurability and consistency, we thus concentrated our efforts on non-LLM approaches. We provided studied 2 lexicon-based approaches (synset distances and word embeddings) and 1 sentence-based approach (SBERT).
 
 #### Commonalities: similarity matrices, extrema and averaging
 
@@ -238,7 +238,7 @@ The code for R2 is structured as follows:
   - Similarity scoring utils: various functions, types and constants to help define the degree of similarity between words and sentences. The functions in question help to study similarity (cosine), dissimilarity (distance), and to average scores over multiples inputs when crossing multiple input words or sentences with multiple baseline words or sentences.  
   - TF-IDF utils: functions to compute the TF-IDF score of a sentence, and filter words based on this analysis. I kept it here because it was important for the study of the different methods, but the chosen SBERT matcher does not use it.  
   - User input vs basline comparison functions: these are the three functions providing an output based on our approaches (one for WordNet, one for word-embedding cosine similarities, and the final, which acts as our default, the sentence-embedding cosine similarities).  
-  - Model loaders: utils to load the SBERT model and the WordNet database. As mentioned, USE, while present, does not work.  
+  - Model loaders: utils to load the SBERT model and the WordNet database. As mentioned, USE, while present as comments in the code, does not work.  
   - Request handler: the core function that handles the POST requests for the microservice, and acts as a sort of gateway for the various ways one can call the sentence matcher.  
   - Main: a small block for direct testing of the code in this file.
 - `role2_service.py`: Contains the FastAPI microservice for the sentence matcher. This file is responsible for exposing the sentence matcher as a microservice, and is structured as follows:  
