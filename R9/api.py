@@ -1,6 +1,6 @@
 import requests
 import logging
-from private_info import RAISON_SERVICE_URL
+from private_information import RAISON_SERVICE_URL
 
 # Configuration des logs
 logging.basicConfig(level=logging.INFO)
@@ -20,5 +20,3 @@ def fetch_advertisements():
     except Exception as e:
         logger.error(f"Exception lors de la récupération des publicités : {e}")
         return {}
-
-
