@@ -1,111 +1,129 @@
-from fastapi import FastAPI, Body, Depends
-from sqlalchemy.orm import Session
+import os
+import datetime
+import openai
 import torch
-from transformers import LlamaTokenizer, MistralForCausalLM
+from fastapi import FastAPI, Body, Depends
+from pydantic import BaseModel
+from sqlalchemy import create_engine, Column, Integer, String, DateTime
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker, Session
+from typing import Dict, Any
+import uvicorn
 
-# Integration with R1 (LLM Model developed earlier)
-from . import R1_model  # Ensure that R1 is properly integrated and accessible.
+# ---------------------------
+# Database Setup (PostgreSQL)
+# ---------------------------
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://user:password@localhost:5432/db_name")
 
-# Logic to detect the type of user input (Casual vs. Decision Making)
-def is_casual_conversation(user_message: str) -> bool:
+engine = create_engine(DATABASE_URL)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base = declarative_base()
+
+class Message(Base):
+    __tablename__ = "messages"
+    id = Column(Integer, primary_key=True, index=True)
+    session_id = Column(String, index=True)
+    role = Column(String)  # 'user' or 'assistant'
+    text = Column(String)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+# Create tables if they don't exist
+Base.metadata.create_all(bind=engine)
+
+# Dependency to get a database session
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+def get_session_history(db: Session, session_id: str):
+    """Retrieve the conversation history for the given session_id."""
+    messages = (
+        db.query(Message)
+        .filter(Message.session_id == session_id)
+        .order_by(Message.created_at)
+        .all()
+    )
+    return [(msg.role, msg.text) for msg in messages]
+
+# ---------------------------
+# LLM Setup (Local vs Remote)
+# ---------------------------
+LLM_LOCAL = False  # Set to True for local LLM call, False for remote LLM call
+
+# Initialize the OpenAI GPT-3 or GPT-4 API Key
+openai.api_key = "YOUR_OPENAI_API_KEY"  # Remplace par ta clé API OpenAI
+
+# Function to call GPT-3 or GPT-4 via OpenAI API
+def call_LLM_remote(prompt_str: str) -> str:
     """
-    Detect if the user's message is a casual conversation or a decision-making request.
+    Calls the GPT-3 or GPT-4 model via the OpenAI API to generate a response.
     """
-    casual_keywords = ["hello", "hi", "how are you", "what's up", "tell me"]
-    decision_keywords = ["what service", "help me", "decide", "choose", "recommend"]
+    response = openai.Completion.create(
+        model="gpt-4",  # Utilise GPT-4, tu peux aussi utiliser "gpt-3.5-turbo" si tu préfères GPT-3.5
+        prompt=prompt_str,
+        max_tokens=200,  # Max tokens for response
+        temperature=0.7,  # Randomness (0.7 for creativity)
+        top_p=1,  # Control the diversity of the generated text (optional)
+        frequency_penalty=0,  # Penalty for repetition
+        presence_penalty=0,  # Penalty to avoid repeating similar concepts
+    )
+    return response.choices[0].text.strip()
+
+# ---------------------------
+# FastAPI Setup
+# ---------------------------
+app = FastAPI(
+    title="LLM Agent – Process User Input",
+    description="This API processes user input to determine if it is a casual conversation or a request for service.",
+    version="1.0.0",
+)
+
+# Function to build the prompt to distinguish conversation types
+def build_prompt(user_message: str) -> str:
+    """
+    Creates a prompt to determine if the user's message is a casual conversation or a service request.
+    """
+    prompt = f"""
+    Here's the user's message: "{user_message}"
+    Please determine if this message is a casual conversation or a service request.
+
+    If it's a casual conversation (e.g., a greeting or informal question), reply with "False".
+    If it's a service request (e.g., asking for help or a service), reply with "True".
+    """
+    return prompt
+
+# Pydantic model for receiving the message
+class UserMessage(BaseModel):
+    message: str
+
+# Endpoint for processing the user input
+@app.post("/process_message", response_model=Dict[str, Any])
+def process_message(data: UserMessage):
+    """
+    This function receives a user message, creates a prompt, and uses GPT-3 or GPT-4 to determine if the message
+    is a casual conversation or a service request.
+    """
+    user_message = data.message
+    prompt = build_prompt(user_message)
     
-    # Check if the message contains casual conversation keywords
-    if any(keyword in user_message.lower() for keyword in casual_keywords):
-        return True
-    # Check if the message contains decision-making keywords
-    if any(keyword in user_message.lower() for keyword in decision_keywords):
-        return False
-    return False
+    # Call GPT-3 or GPT-4 via OpenAI API
+    response_text = call_LLM_remote(prompt)
 
-
-# New function to process user input based on type
-@app.post("/process_input", summary="Process user input for casual talk or decision making")
-def process_user_input(
-    session_id: str = Body(..., description="Unique identifier for the conversation session."),
-    user_message: str = Body(..., description="User's input message."),
-    db: Session = Depends(get_db),
-):
-    """
-    This function processes the user's input and determines whether it is
-    a casual conversation or a decision-making request.
-    - If it's casual talk, the LLM model is used to respond.
-    - If it's a decision-making request, a broker agent is called to
-      handle the request.
-    """
-    # Determine if the user is engaging in casual conversation or requesting a decision
-    is_casual = is_casual_conversation(user_message)
-    
-    # Save the user's message to the database
-    user_msg = Message(session_id=session_id, role="user", text=user_message)
-    db.add(user_msg)
-    db.commit()
-    db.refresh(user_msg)
-    
-    if is_casual:
-        # Use the LLM model to generate a casual response
-        session_history = get_session_history(db, session_id)
-        prompt_str = build_prompt(session_history)
-        input_ids = R1_model.tokenizer(prompt_str, return_tensors="pt").input_ids.to("cuda")
-
-        with torch.inference_mode():
-            generated_ids = R1_model.model.generate(
-                input_ids,
-                max_new_tokens=200,
-                temperature=0.7,
-                repetition_penalty=1.1,
-                do_sample=True,
-                eos_token_id=R1_model.tokenizer.eos_token_id,
-            )
-
-        prompt_len = input_ids.shape[-1]
-        output_ids = generated_ids[0][prompt_len:]
-        response_text = R1_model.tokenizer.decode(
-            output_ids,
-            skip_special_tokens=True,
-            clean_up_tokenization_spaces=True,
-        )
-
-        # Save the assistant's response to the database
-        assistant_msg = Message(session_id=session_id, role="assistant", text=response_text)
-        db.add(assistant_msg)
-        db.commit()
-        db.refresh(assistant_msg)
-
-        return {
-            "response": response_text,
-            "session_id": session_id,
-        }
-
+    # The model should respond with "True" or "False" based on message type
+    if "True" in response_text:
+        return {"is_service_request": True}
     else:
-        # Handle decision-making request via broker agent
-        # (This part should call the broker agent and then the provider agent)
-        # Placeholder for interacting with the broker agent and provider agent
-        decision = ask_broker_and_provider_agents(user_message)
+        return {"is_service_request": False}
 
-        # Save the provider agent's response to the database
-        assistant_msg = Message(session_id=session_id, role="assistant", text=decision)
-        db.add(assistant_msg)
-        db.commit()
-        db.refresh(assistant_msg)
+# Health check endpoint
+@app.get("/health", summary="Check Health of the Service")
+def health_check():
+    """Return a simple JSON indicating the service is online."""
+    return {"status": "OK"}
 
-        return {
-            "response": decision,
-            "session_id": session_id,
-        }
-
-# Fictitious function to query the broker agent and the provider agent
-def ask_broker_and_provider_agents(user_message: str) -> str:
-    """
-    Processes a decision-making request by querying the broker agent and
-    then a provider agent to obtain an appropriate response.
-    """
-    # Call the broker agent and get a response from a provider agent
-    # This part is a placeholder and should be integrated with the broker and provider agents.
-    return "Here is the decision after consulting the broker and provider."
-
-
+# Run the FastAPI application with Uvicorn
+if __name__ == "__main__":
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
