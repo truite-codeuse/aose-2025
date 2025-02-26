@@ -21,24 +21,4 @@ def fetch_advertisements():
         logger.error(f"Exception lors de la récupération des publicités : {e}")
         return {}
 
-def send_to_nassim(project_id: str, user_input: List[str]) -> bool:
-    """
-    Envoie les résultats à Nassim via une API HTTP POST.
-    """
-    try:
-        response = requests.post(
-            f"{NASSIM_API_URL}/receive_ad",
-            json={
-                "project_id": project_id,
-                "user_input": user_input
-            }
-        )
-        if response.status_code == 200:
-            logger.info(f"Résultats envoyés à Nassim pour le projet {project_id}.")
-            return True
-        else:
-            logger.error(f"Erreur lors de l'envoi à Nassim : {response.status_code}")
-            return False
-    except Exception as e:
-        logger.error(f"Exception lors de l'envoi à Nassim : {e}")
-        return False
+
