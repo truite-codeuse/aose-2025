@@ -71,34 +71,20 @@ class UserInput(BaseModel):
 # Helper Functions
 # ---------------------------
 def classify_input(user_input: str) -> str:
-    """
-    Classify the user input as either casual conversation or a decision-making request
-    by asking the LLM R1 to determine the type of input.
-    
-    Args:
-        user_input (str): The user's input message.
-    
-    Returns:
-        str: "decision" if it's a service request, "casual" otherwise.
-    """
-    # Define the prompt to ask the LLM if the input is a service request
     prompt = (
-        f"Peux-tu me dire si l'entrée utilisateur suivante est une demande de service ou une conversation informelle ? "
-        f"Réponds 'vrai' si c'est une demande de service, 'faux' sinon. "
-        f"Entrée utilisateur : {user_input}"
+        f"Can you tell me if the following user input is a service request or an informal conversation? "
+        f"Reply 'true' if it's a service request, 'false' otherwise. "
+        f"User input: {user_input}"
     )
-    
+
     try:
-        # Call the R1 API with the prompt
         response = call_r1_api("classification_session", prompt)
         
-        # Check the LLM's response
         if "vrai" in response.lower():
-            return "decision"  # It's a service request
+            return "decision"
         else:
-            return "casual"  # It's casual conversation
+            return "casual"
     except Exception as e:
-        # Fallback to keyword-based classification if the LLM call fails
         logger.error(f"Error calling R1 API for classification: {e}")
         decision_keywords = ["decide", "choose", "option", "recommend", "help me decide"]
         if any(keyword in user_input.lower() for keyword in decision_keywords):
@@ -107,40 +93,21 @@ def classify_input(user_input: str) -> str:
             return "casual"
 
 def call_r1_api(session_id: str, user_message: str) -> str:
-    """
-    Call the R1 API to generate a response from the LLM.
-    
-    Args:
-        session_id (str): Unique identifier for the conversation session.
-        user_message (str): The user's input message.
-    
-    Returns:
-        str: The LLM-generated response.
-    """
     payload = {
         "session_id": session_id,
         "user_message": user_message,
     }
-    response = requests.post(R1_API_URL, json=payload)
+    response = requests.post(R1_API_URL, json=payload, timeout=5)
     if response.status_code == 200:
         return response.json()["response"]
     else:
         raise Exception(f"Failed to call R1 API: {response.status_code} - {response.text}")
 
 def call_broker_api(user_input: str) -> str:
-    """
-    Call the broker agent to process a decision-making request.
-    
-    Args:
-        user_input (str): The user's input message.
-    
-    Returns:
-        str: The broker's response.
-    """
     payload = {
         "user_input": user_input,
     }
-    response = requests.post(BROKER_API_URL, json=payload)
+    response = requests.post(BROKER_API_URL, json=payload, timeout=5)
     if response.status_code == 200:
         return response.json()["response"]
     else:
@@ -150,71 +117,26 @@ def call_broker_api(user_input: str) -> str:
 # Main Functions for R4
 # ---------------------------
 def handle_casual_conversation(session_id: str, user_input: str, db: Session) -> str:
-    """
-    Handle casual conversation by calling the R1 API.
-    
-    Args:
-        session_id (str): Unique identifier for the conversation session.
-        user_input (str): The user's input message.
-        db (Session): Database session.
-    
-    Returns:
-        str: The LLM-generated response.
-    """
-    # Call the R1 API to generate a response
     response_text = call_r1_api(session_id, user_input)
-    
-    # Save the assistant's response in the database
     assistant_msg = Message(session_id=session_id, role="assistant", text=response_text)
     db.add(assistant_msg)
     db.commit()
     db.refresh(assistant_msg)
-    
     return response_text
 
 def handle_decision_request(session_id: str, user_input: str, db: Session) -> str:
-    """
-    Handle decision-making requests by interacting with the broker agent.
-    
-    Args:
-        session_id (str): Unique identifier for the conversation session.
-        user_input (str): The user's input message.
-        db (Session): Database session.
-    
-    Returns:
-        str: The final response to the user.
-    """
-    # Step 1: Send the request to the broker agent
     broker_response = call_broker_api(user_input)
-    
-    # Step 2: Use the R1 API to transform the broker's response into natural language
     final_response = call_r1_api(session_id, broker_response)
-    
-    # Save the assistant's response in the database
     assistant_msg = Message(session_id=session_id, role="assistant", text=final_response)
     db.add(assistant_msg)
     db.commit()
     db.refresh(assistant_msg)
-    
     return final_response
 
-# ---------------------------
-# API Endpoint
-# ---------------------------
 @app.post("/process_input", summary="Process user input for casual talk or decision making")
-def process_user_input(
-    user_input: UserInput,
-    db: Session = Depends(get_db),
-):
-    """
-    This function processes the user's input and determines whether it's a casual conversation
-    or a request for a service. It responds with a boolean and stores the interaction in the database.
-    """
+def process_user_input(user_input: UserInput, db: Session = Depends(get_db)):
     try:
-        # Classify the user input
         input_type = classify_input(user_input.user_message)
-        
-        # Handle the input based on its type
         if input_type == "casual":
             response_text = handle_casual_conversation(user_input.session_id, user_input.user_message, db)
         elif input_type == "decision":
@@ -231,9 +153,11 @@ def process_user_input(
         logger.error(f"Error processing user input: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
 
-# ---------------------------
-# Run the Application
-# ---------------------------
+@app.post("/classify_input", summary="Returns true for a service query, false for casual talk", response_model=bool)
+def classify_user_input(user_input: UserInput) -> bool:
+    input_type = classify_input(user_input.user_message)
+    return input_type == "decision"
+
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=False)
+    uvicorn.run("app.main:app", host="0.0.0.0", port=8004, reload=False)
