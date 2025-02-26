@@ -69,7 +69,7 @@ uvicorn app.role4_service:app --reload
 ```
 The application will be available at http://127.0.0.1:8004.
 
-6. Testing the API
+6. API Endpoints
 To test the /process_input endpoint, you can send a POST request with the following JSON body:
 
 ```bash
@@ -89,15 +89,29 @@ curl -X 'POST' \
   "user_message": "Can you help me choose a restaurant?"
 }'
 ```
-7. Response Format
+** Response Format**
 The response will be a JSON object with the following structure:
 
-```bash
+```json
 {
     "response": "Sure, I can help you with that!",
     "session_id": "session123"
 }
 ```
+
+The `/classify_input` endpoint is responsible for classifying the user's input as either a service request or a casual conversation. It uses the `classify_input` function to determine the type of input based on the user's message.
+
+This endpoint receives a `UserInput` object containing the user's session ID and message. It then classifies the message and returns a boolean indicating whether the input is a service request (`true`) or a casual conversation (`false`).
+
+
+To use this endpoint, send a POST request with the following JSON body:
+
+```json
+{
+  "session_id": "session123",
+  "user_message": "Can you help me choose a restaurant?"
+}```
+
 ## 1. Classify User Input
 The application starts by classifying the user's input using the `classify_input` function. This function determines whether the input corresponds to:
 
