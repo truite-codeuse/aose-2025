@@ -91,29 +91,23 @@ The response will be a JSON object with the following structure:
     "session_id": "session123"
 }
 ```
-Application Workflow
-Classify User Input: The application uses the classify_input function to determine if the input is a casual conversation or a decision-making request. If the input contains keywords associated with decision-making, it will be processed as a service request.
+1. Classify User Input
+L'application commence par classer l'entrée de l'utilisateur en utilisant la fonction classify_input. Cette fonction détermine si l'entrée correspond à :
 
-Casual Conversation: If the input is classified as casual, it is sent to the R1 API, which generates a response, and the interaction is stored in the database.
+Une conversation informelle (casual).
+Une demande de service (decision-making request).
+Si l'entrée contient des mots-clés associés à la prise de décision, elle sera classée comme une demande de service. Sinon, elle sera considérée comme une conversation informelle.
 
-Decision Request: If the input is classified as a decision-making request, it is sent to the Broker API to process the request. The broker's response is then passed to the R1 API to generate a natural language response, which is stored in the database.
+2. Casual Conversation
+Si l'entrée est classée comme une conversation informelle :
 
-Database Schema
-The database has a table named messages, with the following columns:
+L'application envoie l'entrée à l'API R1, qui génère une réponse appropriée.
+Cette interaction est ensuite enregistrée dans la base de données, y compris la réponse générée par l'assistant.
+3. Decision Request
+Si l'entrée est classée comme une demande de service :
 
-id: Primary key (integer)
-session_id: Unique identifier for the conversation session (string)
-role: Role of the message sender (either 'user' or 'assistant')
-text: The message text (string)
-created_at: Timestamp when the message was created (datetime)
-Logging
-The application uses Python's built-in logging module to log important events. Logs will be printed to the console by default.
+L'application envoie l'entrée à l'API Broker pour traiter la demande.
+La réponse générée par l'API Broker est ensuite envoyée à l'API R1, qui transforme cette réponse en langage naturel.
+Enfin, la réponse finale est enregistrée dans la base de données, y compris la réponse générée par l'assistant.
 
-Contributing
-Fork this repository.
-Create a new branch (git checkout -b feature-name).
-Commit your changes (git commit -am 'Add new feature').
-Push to the branch (git push origin feature-name).
-Open a pull request.
-License
-This project is licensed under the MIT License - see the LICENSE file for details.
+
