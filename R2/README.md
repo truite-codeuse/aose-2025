@@ -209,14 +209,15 @@ Since there are some data and models to be loaded before the sentence matcher mi
 You can then test its behavior with something like this:
 
 ```sh
-curl -X POST 0.0.0.0:8002/match_for_scenario -H "Content-Type: application/json" -d "{\"user_input\": \"I'm wondering if I should ban someone from my discord server\", \"get_max\": true}"
+curl -X POST 0.0.0.0:8002/match_for_scenario -H "Content-Type: application/json" \
+    -d "{\"user_input\": \"I'm wondering if I should ban someone from my discord server\", \"get_max\": true}"
 ```
 
 ### API
 
 The sentence matcher microservice exposes 3 routes:
 
-- `/match`: the general route which calls the sentence matcher general request handler. This route takes a somewhat complex set of arguments, and can thus let the sentence matcher serve for various purposes:  
+- `/match`: the general route which calls the sentence matcher general request handler. This route takes a somewhat complex set of arguments (as a JSON), and can thus let the sentence matcher serve for various purposes:  
   - `user_input : str` : required, the user input which we need to compare to a set of baseline documents.
   - `documents : DocumentDict`: optional, a dictionary of document IDs and document content (list of sentence). If not provided, this is automatically filled with a dictionary of the rAIson project's description, scenarios and options.  
   - `model : ModelQueryKey`: optional, the model/method to use for the matching. If not provided, this is automatically set to `"sbert"`.  
@@ -250,3 +251,4 @@ The code for R2 is structured as follows:
 
 - Add an LLM similarity matcher: a comparison function which does some prompt engineering and then calls R1 (and corresponding API route)  
 - Fix Google USE  
+
