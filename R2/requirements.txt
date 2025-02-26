@@ -1,0 +1,7 @@
+python-dotenv
+nltk
+torch
+tensorflow_hub
+gensim
+sentence_transformers
+sklearn
