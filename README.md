@@ -127,7 +127,3 @@ To ensure efficient development using JADE, the following best practices should 
 5. Regularly Test Agent Interactions  
    - Utilize JADE’s built-in debugging and monitoring tools.  
    - Ensure consistency in message exchanges and agent decision-making.  
-
----
-
-This document will serve as a foundation for integrating and deploying agents within the project's architecture.  
