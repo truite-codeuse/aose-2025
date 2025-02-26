@@ -2,6 +2,13 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import Dict, List
 import requests
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+import logging
+
+# Configuration des logs
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
@@ -9,18 +16,34 @@ app = FastAPI()
 class UserRequest(BaseModel):
     user_prompt: str
 
+# Seuil de similarité configurable
+SIMILARITY_THRESHOLD = 0.3  # Ajuste ce seuil selon tes besoins
+
 # Fonction pour récupérer les publicités des agents d'argumentation (R8)
 def fetch_advertisements():
+    """
+    Récupère les publicités des agents d'argumentation (R8) via une API.
+    """
     try:
-        response = requests.get("http://127.0.0.1:8004/advertisements")
+        response = requests.get("http://127.0.0.1:8004/advertisements")  # URL de l'API R8
         if response.status_code == 200:
             return response.json()  # Retourne les publicités sous forme de dictionnaire
         else:
-            print(f"Erreur lors de la récupération des publicités : {response.status_code}")
+            logger.error(f"Erreur lors de la récupération des publicités : {response.status_code}")
             return {}
     except Exception as e:
-        print(f"Exception lors de la récupération des publicités : {e}")
+        logger.error(f"Exception lors de la récupération des publicités : {e}")
         return {}
+
+# Fonction pour calculer la similarité cosinus
+def calculate_similarity(user_prompt: str, service_description: str) -> float:
+    """
+    Calcule la similarité cosinus entre la demande de l'utilisateur et la description du service.
+    """
+    vectorizer = TfidfVectorizer()
+    tfidf_matrix = vectorizer.fit_transform([user_prompt, service_description])
+    similarity = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:2])
+    return similarity[0][0]
 
 # Endpoint pour faire correspondre les demandes de l'utilisateur avec les services disponibles
 @app.post("/matchmaking")
@@ -29,18 +52,18 @@ async def matchmaking(request: UserRequest):
         user_prompt = request.user_prompt
 
         # Étape 1 : Récupérer les publicités des agents d'argumentation (R8)
-        print("Récupération des publicités des agents d'argumentation...")
+        logger.info("Récupération des publicités des agents d'argumentation...")
         SERVICE_REPOSITORY = fetch_advertisements()
         if not SERVICE_REPOSITORY:
             return {"status": "Aucune publicité disponible."}
 
         # Étape 2 : Faire correspondre la demande de l'utilisateur avec les services disponibles
-        print("Recherche de services correspondants...")
+        logger.info("Recherche de services correspondants...")
         matched_services = {}
         for project_id, service_info in SERVICE_REPOSITORY.items():
-            # Simuler un score de similarité (à remplacer par un vrai algorithme de matching)
-            similarity_score = 0.5  # Exemple de score
-            if similarity_score > 0.2:  # Seuil de similarité
+            # Calculer le score de similarité
+            similarity_score = calculate_similarity(user_prompt, service_info["description"])
+            if similarity_score > SIMILARITY_THRESHOLD:  # Seuil de similarité
                 matched_services[project_id] = {
                     "description": service_info["description"],
                     "scenarios": service_info["scenarios"],
@@ -51,12 +74,13 @@ async def matchmaking(request: UserRequest):
             return {"status": "Aucun service correspondant trouvé."}
 
         # Étape 3 : Proposer les services pertinents à l'utilisateur
-        print("Proposer les services pertinents...")
+        logger.info("Proposer les services pertinents...")
         return {
             "status": "success",
             "matched_services": matched_services
         }
     except Exception as e:
+        logger.error(f"Erreur lors du matchmaking : {str(e)}")
         raise HTTPException(status_code=500, detail=f"Erreur lors du matchmaking : {str(e)}")
 
 # Point d'entrée pour exécuter l'API
