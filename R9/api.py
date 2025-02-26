@@ -1,6 +1,6 @@
 import requests
 import logging
-from private_information import RAISON_SERVICE_URL
+from private_info import RAISON_SERVICE_URL
 
 # Configuration des logs
 logging.basicConfig(level=logging.INFO)
