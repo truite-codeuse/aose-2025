@@ -72,20 +72,39 @@ class UserInput(BaseModel):
 # ---------------------------
 def classify_input(user_input: str) -> str:
     """
-    Classify the user input as either casual conversation or a decision-making request.
+    Classify the user input as either casual conversation or a decision-making request
+    by asking the LLM R1 to determine the type of input.
     
     Args:
         user_input (str): The user's input message.
     
     Returns:
-        str: "casual" or "decision".
+        str: "decision" if it's a service request, "casual" otherwise.
     """
-    # Example: Simple keyword-based classification
-    decision_keywords = ["decide", "choose", "option", "recommend", "help me decide"]
-    if any(keyword in user_input.lower() for keyword in decision_keywords):
-        return "decision"
-    else:
-        return "casual"
+    # Define the prompt to ask the LLM if the input is a service request
+    prompt = (
+        f"Peux-tu me dire si l'entrée utilisateur suivante est une demande de service ou une conversation informelle ? "
+        f"Réponds 'vrai' si c'est une demande de service, 'faux' sinon. "
+        f"Entrée utilisateur : {user_input}"
+    )
+    
+    try:
+        # Call the R1 API with the prompt
+        response = call_r1_api("classification_session", prompt)
+        
+        # Check the LLM's response
+        if "vrai" in response.lower():
+            return "decision"  # It's a service request
+        else:
+            return "casual"  # It's casual conversation
+    except Exception as e:
+        # Fallback to keyword-based classification if the LLM call fails
+        logger.error(f"Error calling R1 API for classification: {e}")
+        decision_keywords = ["decide", "choose", "option", "recommend", "help me decide"]
+        if any(keyword in user_input.lower() for keyword in decision_keywords):
+            return "decision"
+        else:
+            return "casual"
 
 def call_r1_api(session_id: str, user_message: str) -> str:
     """
