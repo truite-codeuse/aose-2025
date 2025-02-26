@@ -69,7 +69,8 @@ uvicorn app.role4_service:app --reload
 ```
 The application will be available at http://127.0.0.1:8004.
 
-##6. API Endpoints
+## API Endpoints
+
 To test the /process_input endpoint, you can send a POST request with the following JSON body:
 
 ```bash
@@ -78,7 +79,7 @@ To test the /process_input endpoint, you can send a POST request with the follow
     "user_message": "Can you help me choose a restaurant?"
 }
 ```
-Example cURL request:
+Example curl request:
 
 ```bash
 curl -X 'POST' \
