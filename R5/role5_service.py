@@ -34,11 +34,6 @@ def match_endpoint(request: MatchRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
-    # Send the result to Role 6
-    send_to_role6(result)
-    
-    # For now, simply display the result (or return it)
-    print("Result to be sent to Role 6 (not sent):", result)
     return result
 
 
@@ -246,21 +241,6 @@ def match_scenarios_with_llm(project_id, user_input):
     result_json["info"] = "" # empty if success
 
     return result_json
-
-# --- Functions for communication with Role 6 ---
-def send_to_role6(result_json):
-    """
-    Sends the result JSON to Role 6 via an HTTP POST.
-    
-    """
-    ROLE6_URL = "http://localhost:8006/find_solution" # URL
-     # Vérification du JSON avant envoi
-    print("Sending to Role 6:", json.dumps(result_json, indent=2))
-    try:
-        response = requests.post(ROLE6_URL, json=result_json)
-        response.raise_for_status()
-    except Exception as e:
-        print(f"Error sending to Role 6: {e}")
 
 # --- Main block to run the service ---
 if __name__ == "__main__":
