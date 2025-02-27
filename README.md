@@ -37,6 +37,8 @@ Here are the different roles and their functionalities:
 - **R8 Communication Facilitator**: ensures communication between agents from R5 to R8
 - **R9 Matchmaking Service**: does routing requests to appropriate argumentation agents based on their advertised capabilities.
 - **R10 Broker**: Acts as an interface between the GUI and the backend microservices.
+- **R11 and R12; Install scripts and running**: install and launch scripts for the microservices
+- **R13 Project coordination**: handling coordination and communication
 
 ### Task Division
 
@@ -52,5 +54,6 @@ The following students are assigned to each role:
 - **R8**: Yaya Latifou
 - **R9**: Maram Beddouihech
 - **R10**: Benlamara Kamilia
-- **Merging and Running Scripts**: Florian Posez, Cheikh Tidiane Diouf
-- **Project coordination**: Théophile Romieu
+- **R11**: Cheikh Tidiane Diouf
+- **R12**: Florian Posez
+- **R13**: Théophile Romieu
