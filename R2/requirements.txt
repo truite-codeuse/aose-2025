@@ -5,3 +5,6 @@ tensorflow_hub
 gensim
 sentence_transformers
 scikit-learn
+pydantic
+uvicorn
+fastapi
