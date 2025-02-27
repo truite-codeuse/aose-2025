@@ -230,8 +230,10 @@ def middleware_pipeline(
 	if current_status == "check_casual_or_query":
 		bool_response = call_R4_check_query(session_id, user_input)
 		if bool_response:
+			print("R4: Query detected")
 			current_status = "query_chat_call_sentence_matcher_for_ad_agent"
 		else:
+			print("R4: Casual talk detected")
 			current_status = "casual_chat_call_llm"
 		if current_status == "casual_chat_call_llm":
 			text_response = call_R1_simple(session_id, user_input)
@@ -242,6 +244,7 @@ def middleware_pipeline(
 			# current_status = "query_chat_call_ad_agent"
 			# ad_text = call_R8_for_ad(session_id, ranked_matched_services)
 			matches = call_R2_for_scenario_matching_all_matches(user_input, threshold = 0.4)
+			print(f"R2: Found {len(matches)} matches for ads: {matches}")
 			if len(matches) == 0:
 				result = (
 					"I'm sorry, I couldn't find any relevant services that could help you. "
@@ -260,10 +263,13 @@ def middleware_pipeline(
 			raise ValueError(f"Invalid current status: {current_status}")
 	elif current_status == "query_chat_call_sentence_matcher_for_service_agent_id":
 		best_matched_service = call_R2_for_scenario_matching_best_match(user_input)
+		print(f"R2: best matched service {best_matched_service}")
 		current_status = "query_chat_call_scenario_recognizing_agent"
 		scenarios = call_R5_for_scenario_matching(best_matched_service)
+		print(f"R5: scenarios {scenarios}")
 		current_status = "query_chat_call_raison_adapter"
 		raison_response = call_R6_for_raison(scenarios)
+		print(f"R6: raison_response {raison_response}")
 		current_status = "query_chat_return_raison_response"
 		result = raison_response + "\nWill you be need anything else ?"
 	else:
