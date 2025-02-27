@@ -116,14 +116,21 @@ The project is organized as follows:
 
 ## How it works
 
-1. **Agent Initialization**:
-   The API receives a `project_id` via the `/initialize` endpoint. This `project_id` is used to make a request to the `Ai-Raison` API to retrieve the associated scenarios and options.
+### Agent Initialization:
+- The API receives a `project_id` via the `/initialize` endpoint.
+- This `project_id` is used to make a request to the Ai-Raison API to retrieve the associated scenarios, options, and description.
 
-2. **Retrieving Scenarios and Options**:
-   Once the data is fetched from the `Ai-Raison` API, it is extracted and formatted to be sent in the response as scenarios (labels) and options (IDs).
+### Retrieving Scenarios, Options, and Description:
+- Once the data is fetched from the Ai-Raison API, it is extracted and formatted to be sent in the response.
+- The response includes:
+  - **Scenarios**: Labels of the scenarios.
+  - **Options**: IDs of the options.
+  - **Description**: Description of the service.
+  - **Service Elements**: Metadata related to the service invocation (e.g., execution ID, timestamp, status).
 
-3. **Health Check**:
-   The `/health` endpoint allows you to quickly check if the server is functioning correctly.
+### Health Check:
+- The `/health` endpoint allows you to quickly check if the server is functioning correctly.
+
 
 
 
