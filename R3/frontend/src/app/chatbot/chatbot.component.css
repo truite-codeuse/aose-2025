@@ -1,70 +1,80 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
 
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
 }
-
 
 .wrapper {
     width: 100%;
-}
-
-
-
-.wrapper .box {
-    border: 1px solid #efefef;
-    padding: 10px 15px;
-    min-height: 620px;
-    max-height: 620px;
-}
-
-.wrapper .box .item {
     display: flex;
-    float: left;
-    margin: 10px 0;
+    flex-direction: column;
+    align-items: center;
 }
 
-.wrapper .box .item .icon {
-    background: #3f51b5;
-    color: white;
-    width: 40px;
-    height: 40px;
-    text-align: center;
-    line-height: 40px;
-    border-radius: 50%;
+/* Make the chat wider */
+.wrapper .box {
+    width: 80%; /* Increased from 90% to 80% */
+    max-width: 900px; /* Wider max width */
+    border: 1px solid #efefef;
+    padding: 15px;
+    min-height: 500px;
+    max-height: 500px;
+    overflow-y: auto;
+    background: white;
+    border-radius: 10px;
 }
 
-.wrapper .box .item .msg {
+/* Message Group */
+.message-group {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 15px;
+}
+
+/* Bot Message */
+.wrapper .box .item.bot {
+    display: flex;
+    width: fit-content;
+}
+
+.wrapper .box .item.bot .msg {
     background: #3f51b5;
     color: white;
     border-radius: 10px;
-    width: 600px;
-    margin-left: 10px;
-}
-
-.wrapper .box .item .msg p {
+    max-width: 80%; /* Wider messages */
     padding: 10px;
 }
 
+/* User Message */
 .wrapper .box .item.right {
-    float: right;
+    display: flex;
+    justify-content: flex-end;
+    width: 100%;
 }
 
 .wrapper .box .item.right .msg {
     background: #efefef;
     color: #333;
+    border-radius: 10px;
+    max-width: 80%; /* Wider messages */
+    padding: 10px;
 }
 
+/* Increase width of input area */
 .wrapper .typing-area {
-    width: 100%;
+    width: 80%; /* Match chat width */
+    max-width: 900px; /* Wider input area */
     background: #efefef;
     height: 50px;
     display: flex;
     justify-content: center;
     align-items: center;
     padding: 10px;
+    margin-top: 10px;
+    border-radius: 5px;
 }
 
 .wrapper .typing-area .input-field {
@@ -74,9 +84,9 @@
 
 .wrapper .typing-area .input-field input {
     width: 100%;
-    padding: 10px;
+    padding: 12px;
     border: 1px solid transparent;
-    border-radius: 3px;
+    border-radius: 5px;
     outline: none;
     padding-right: 70px;
     font-family: 'Poppins', sans-serif;
@@ -94,8 +104,8 @@
     transform: translateY(-50%);
     background: transparent;
     border: 1px solid #3f51b5;
-    padding: 5px 10px;
-    border-radius: 3px;
+    padding: 8px 12px;
+    border-radius: 5px;
     color: #3f51b5;
     outline: none;
     cursor: pointer;
