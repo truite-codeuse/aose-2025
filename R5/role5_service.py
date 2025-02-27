@@ -263,6 +263,7 @@ def match_scenarios_with_llm(project_id, user_input):
 
     # Forwarding Logging: Log the final JSON result before returning
     logging.info("Final JSON result: %s", result_json)
+    result_json["matched_scenarios"] = [scenario for scenario in result_json["matched_scenarios"] if scenario in scenarios]
     return result_json
 
 # --- Main block to run the service ---
