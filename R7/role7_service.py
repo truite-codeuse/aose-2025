@@ -3,9 +3,6 @@ from pydantic import BaseModel
 import requests
 import json
 
-
-
-
 #  Vérification de la clé API
 try:
     from config import api_key
@@ -91,5 +88,4 @@ def initialize_agent(request: InitRequest):
 if __name__ == "__main__":
     import uvicorn
     print(" Démarrage du serveur Uvicorn...")
-    uvicorn.run("main:app", host="0.0.0.0", port=8007, reload=True)
-
+    uvicorn.run("main:app", host="127.0.0.1", port=8007, reload=True)
