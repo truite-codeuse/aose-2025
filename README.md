@@ -29,10 +29,12 @@ We have adapted the project's architecture from an agent-based communication mod
 Here are the different roles and their functionalities:
 - **R1 LLM Service**: Utilizes Docker to launch the LLM and creates API endpoints to query the model.
 - **R2 Sentence Matcher**: A sentence matcher based on SBERT that determines which rAIson project should be queried.
+- **R3 Web GUI**: A web interface with a chat window that allows users to interact with the application.
 - **R4 User Input Processing**: Queries R1 to ascertain whether a user input is a casual message or a query for a rAIson service.
 - **R5 Scenario Matcher**: Processes user input to match it with rAIson service scenarios.
 - **R6 rAIson Solution in Natural Language**: Executes the scenario on the appropriate rAIson service and queries the LLM to translate the result into natural language.
 - **R7 rAIson data fetcher**: initialize an argumentation agent by fetching scenarios and options
+- **R8 Communication Facilitator**: ensures communication between agents from R5 to R8
 - **R9 Matchmaking Service**: does routing requests to appropriate argumentation agents based on their advertised capabilities.
 - **R10 Broker**: Acts as an interface between the GUI and the backend microservices.
 
@@ -42,12 +44,13 @@ The following students are assigned to each role:
 
 - **R1**: Daniel Latorre
 - **R2**: Tristan Duquesne
+- **R3**: Abdou Aziz Thiam
 - **R4**: Thanina Ait Ferhat
 - **R5**: Nassim Lattab
 - **R6**: Mohamed Azzaoui
 - **R7**: Lynda Benkerrou
+- **R8**: Yaya Latifou
 - **R9**: Maram Beddouihech
 - **R10**: Benlamara Kamilia
-- **GUI**: Abdou Aziz Thiam, Yaya Latifou
 - **Merging and Running Scripts**: Florian Posez, Cheikh Tidiane Diouf
 - **Project coordination**: Théophile Romieu
