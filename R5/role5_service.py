@@ -4,7 +4,15 @@ from pydantic import BaseModel
 import json
 import requests
 import re
+import logging
 from config import api_key
+
+# Logging Configuration
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s %(levelname)s [Role5] %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
 
 app = FastAPI(title="Role 5 - Matching Scenarios Service")
 
@@ -29,11 +37,16 @@ def match_endpoint(request: MatchRequest):
     Receives a project_id and user_input, processes the matching using the LLM,
     and returns the matching result as JSON.
     """
+    # Request Logging
+    logging.info("Received request for project_id: %s with user_input: %s", request.project_id, request.user_input)
+    
     try:
         result = match_scenarios_with_llm(request.project_id, request.user_input)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
+    # Forwarding Logging
+    logging.info("Forwarding response: %s", result)
     return result
 
 
@@ -80,17 +93,17 @@ def get_data_api(url, api_key):
         metadata: Returned metadata
     """
     headers = {"x-api-key": api_key}
+    metadata = {}
     try:
         response = requests.get(url, headers=headers)
         if response.status_code == 200:
             metadata = response.json()
         elif response.status_code == 400:
-            print("Error 400: Invalid request.")
+            logging.error("Error 400: Invalid request.")
         else:
-            print(f"Error {response.status_code}: {response.text}")
+            logging.error("Error %s: %s", response.status_code, response.text)
     except Exception as e:
-        print(f"An error occurred: {e}")
-        metadata = {}
+        logging.error("An error occurred: %s", e)
 
     return metadata
 
@@ -171,12 +184,18 @@ def call_llm(session_id, prompt, host="http://localhost:8000"):
         "temperature": 0.7,
         "repetition_penalty": 1.1
     }
-
+    
+    # Log API call details
+    logging.debug("Calling LLM API with session_id: %s and payload: %s", session_id, payload)
+    
     resp = requests.post(url, json=payload)
     resp.raise_for_status()
 
     data = resp.json()
     llm_text = data["response"]
+
+    # Log raw LLM output
+    logging.debug("LLM raw output: %s", repr(llm_text))
 
     return llm_text
 
@@ -206,19 +225,19 @@ def match_scenarios_with_llm(project_id, user_input):
 
     # 2) Build the LLM prompt
     prompt = build_prompt(scenarios, user_input)
+    logging.debug("Constructed prompt: %s", prompt)
 
     # 3) Call the LLM
     llm_output = call_llm(session_id="matching_scenarios_session", prompt=prompt)
-    print("DEBUG - LLM raw output:", repr(llm_output))
-
+    
     # 4) Preprocess with regex to extract only the JSON block
     extracted_json = None
     match_obj = re.search(r'(\{.*\})', llm_output, re.DOTALL)
     if match_obj:
-        # Retrieve only the part between the first '{' and the last '}'
         extracted_json = match_obj.group(1).strip()
-
-    if not extracted_json:
+        logging.debug("Extracted JSON block from LLM output: %s", extracted_json)
+    else:
+        logging.error("No JSON object found in LLM response. Raw output: %s", llm_output)
         return {
             "project_id": project_id,
             "user_input": user_input,
@@ -229,7 +248,9 @@ def match_scenarios_with_llm(project_id, user_input):
     # Attempt to parse the extracted JSON block
     try:
         result_json = json.loads(extracted_json)
+        logging.info("Successfully parsed LLM response. Matched scenarios: %s", result_json.get("matched_scenarios"))
     except json.JSONDecodeError:
+        logging.error("JSON parsing failed for extracted JSON: %s", extracted_json)
         result_json = {
             "matched_scenarios": [],
             "info": "Could not parse extracted JSON from LLM response."
@@ -238,8 +259,10 @@ def match_scenarios_with_llm(project_id, user_input):
     # Add the project_id and the user's input to the final result, regardless of parsing success
     result_json["project_id"] = project_id
     result_json["user_input"] = user_input
-    result_json["info"] = "" # empty if success
+    result_json["info"] = result_json.get("info", "")
 
+    # Forwarding Logging: Log the final JSON result before returning
+    logging.info("Final JSON result: %s", result_json)
     return result_json
 
 # --- Main block to run the service ---
