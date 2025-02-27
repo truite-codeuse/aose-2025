@@ -56,7 +56,7 @@ Before starting, make sure you have the following:
 Start the FastAPI server with Uvicorn:
 
 ```bash
-uvicorn main:app --reload
+uvicorn role7_service:app --reload
 ```
 
 This will start the API on `http://127.0.0.1:8007`.
