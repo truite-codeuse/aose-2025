@@ -107,8 +107,9 @@ def build_prompt(options, user_input):
 def find_solution_llm(project_id, matched_scenarios, user_input):
 
     solution = call_api(project_id, matched_scenarios)
-    print(solution)
-    
+    print(f"{solution=}")
+    if solution is None:
+        return "Sorry. We cannot handle your request."
     prompt = build_prompt(solution, user_input) 
     print(f"PROMPT {prompt}")
     llm_output = call_llm(session_id="explain_solutions_session", prompt=prompt)
