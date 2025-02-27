@@ -2,98 +2,97 @@
 ### Author
 Role R7: Lynda BENKERROU
 
-
 ## Description
 
-Ce projet fournit une API FastAPI permettant d'initialiser un agent d'argumentation avec des scénarios et des options extraits d'un service `Ai-Raison`. Cette API reçoit un identifiant de projet (`project_id`) et renvoie les scénarios et options associés au projet en question.
+This project provides a FastAPI allowing you to initialize an argumentation agent with scenarios and options extracted from an `Ai-Raison` service. This API receives a project identifier (`project_id`) and returns the associated scenarios and options for that project.
 
-L'API expose les points d'entrées suivants :
-- **/initialize** : Initialise l'agent en récupérant les scénarios et options associés à un projet donné.
-- **/health** : Permet de vérifier si le serveur fonctionne correctement.
+The API exposes the following endpoints:
+- **/initialize**: Initializes the agent by retrieving the scenarios and options associated with a given project.
+- **/health**: Allows you to check if the server is functioning properly.
 
-## Prérequis
+## Prerequisites
 
-Avant de démarrer, assurez-vous que vous avez les éléments suivants :
+Before starting, make sure you have the following:
 
 - **Python 3.7+**
-- **Pip** (gestionnaire de paquets Python)
-- Un fichier `config.py` contenant une clé API valide pour l'API `Ai-Raison` (clé sous la forme `api_key = 'votre_clé_api'`).
+- **Pip** (Python package manager)
+- A `config.py` file containing a valid API key for the `Ai-Raison` API (the key should be in the form `api_key = 'your_api_key'`).
 
 ## Installation
 
-1. Clonez ce repository :
+1. Clone this repository:
    ```bash
-   git clone https://votre-repository-url
+   git clone https://your-repository-url
    cd role7-argumentation-agent
    ```
 
-2. Créez un environnement virtuel (optionnel mais recommandé) :
+2. Create a virtual environment (optional but recommended):
    ```bash
    python -m venv venv
    ```
 
-3. Activez l'environnement virtuel :
-   - Sous Windows :
+3. Activate the virtual environment:
+   - On Windows:
      ```bash
      venv\Scripts\activate
      ```
-   - Sous MacOS/Linux :
+   - On MacOS/Linux:
      ```bash
      source venv/bin/activate
      ```
 
-4. Installez les dépendances nécessaires :
+4. Install the required dependencies:
    ```bash
    pip install -r requirements.txt
    ```
 
-5. Assurez-vous d'avoir un fichier `config.py` contenant votre clé API, par exemple :
+5. Ensure you have a `config.py` file containing your API key, for example:
    ```python
-   api_key = 'votre_clé_api'
+   api_key = 'your_api_key'
    ```
 
-## Lancer le serveur
+## Run the server
 
-Lancez le serveur FastAPI avec Uvicorn :
+Start the FastAPI server with Uvicorn:
 
 ```bash
 uvicorn main:app --reload
 ```
 
-Cela démarrera l'API sur `http://127.0.0.1:8007`.
+This will start the API on `http://127.0.0.1:8007`.
 
-## Points d'entrées
+## Endpoints
 
-### 1. `/initialize` (Méthode POST)
+### 1. `/initialize` (POST Method)
 
-Initialise l'agent en récupérant les scénarios et options associés à un projet donné.
+Initializes the agent by retrieving the scenarios and options associated with a given project.
 
-**Exemple de requête :**
+**Example Request:**
 
 ```json
 POST http://127.0.0.1:8007/initialize
 Content-Type: application/json
 
 {
-  "project_id": "votre_project_id"
+  "project_id": "your_project_id"
 }
 ```
 
-**Réponse :**
+**Response:**
 
 ```json
 {
-  "project_id": "votre_project_id",
-  "scenarios": ["Scénario 1", "Scénario 2", "Scénario 3"],
+  "project_id": "your_project_id",
+  "scenarios": ["Scenario 1", "Scenario 2", "Scenario 3"],
   "options": ["Option 1", "Option 2"]
 }
 ```
 
-### 2. `/health` (Méthode GET)
+### 2. `/health` (GET Method)
 
-Vérifie si le serveur est en bonne santé.
+Checks if the server is healthy.
 
-**Réponse :**
+**Response:**
 
 ```json
 {
@@ -101,26 +100,29 @@ Vérifie si le serveur est en bonne santé.
 }
 ```
 
-## Structure du code
+## Project Structure
 
-Le projet est organisé de la manière suivante :
+The project is organized as follows:
 
 ```
 /role7-argumentation-agent
 │
-├── main.py                 # Le fichier principal avec la définition des endpoints
-├── config.py               # Contient la clé API pour accéder à l'API Ai-Raison
-├── requirements.txt        # Liste des dépendances Python nécessaires
-└── README.md               # Documentation du projet
+├── main.py                 # Main file with endpoint definitions
+├── config.py               # Contains the API key to access the Ai-Raison API
+├── requirements.txt        # List of required Python dependencies
+└── README.md               # Project documentation
 ```
 
-## Fonctionnement
+## How it works
 
-1. **Initialisation de l'agent** :
-   L'API reçoit un `project_id` via le point d'entrée `/initialize`. Ce `project_id` est utilisé pour faire une requête à l'API `Ai-Raison` afin de récupérer les scénarios et options associés au projet.
+1. **Agent Initialization**:
+   The API receives a `project_id` via the `/initialize` endpoint. This `project_id` is used to make a request to the `Ai-Raison` API to retrieve the associated scenarios and options.
 
-2. **Récupération des scénarios et options** :
-   Une fois les données récupérées depuis l'API `Ai-Raison`, elles sont extraites et formatées pour être envoyées dans la réponse sous forme de scénarios (labels) et d'options (identifiants).
+2. **Retrieving Scenarios and Options**:
+   Once the data is fetched from the `Ai-Raison` API, it is extracted and formatted to be sent in the response as scenarios (labels) and options (IDs).
 
-3. **Vérification de la santé** :
-   Le point d'entrée `/health` permet de vérifier rapidement si le serveur fonctionne correctement.
+3. **Health Check**:
+   The `/health` endpoint allows you to quickly check if the server is functioning correctly.
+
+
+
