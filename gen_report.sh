@@ -2,7 +2,7 @@ cat \
 R1/README.md  file_separator.md \
 R2/README.md  file_separator.md \
 R3/README.md  file_separator.md \
-R4/README.md  file_separator.md \
+R4/readme.md  file_separator.md \
 R5/README.md  file_separator.md \
 R6/README.md  file_separator.md \
 R7/READMER7.md  file_separator.md \
