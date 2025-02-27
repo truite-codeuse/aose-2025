@@ -246,11 +246,9 @@ def middleware_pipeline(
 			# ranked_matched_services = call_R2_for_ad(user_input)
 			# current_status = "query_chat_call_ad_agent"
 			# ad_text = call_R8_for_ad(session_id, ranked_matched_services)
-			# matches = call_R2_for_scenario_matching_all_matches(user_input, threshold = 0.0)
-			matches = [PayloadFor_ScenarioMatchingAgent(
-				project_id = project_id,
-				user_input = nltk.sent_tokenize(user_input),
-			)]
+			matches = call_R2_for_scenario_matching_all_matches(user_input, threshold = 0.0)
+			matches = [matches[0]]
+			project_id = matches[0].project_id
 			print(f"R2: Found {len(matches)} matches for ads: {matches}")
 			if len(matches) == 0:
 				result = (
@@ -270,7 +268,11 @@ def middleware_pipeline(
 		else:
 			raise ValueError(f"Invalid current status: {current_status}")
 	elif current_status == "query_chat_call_sentence_matcher_for_service_agent_id":
-		best_matched_service = call_R2_for_scenario_matching_best_match(user_input)
+		# best_matched_service = call_R2_for_scenario_matching_best_match(user_input)
+		best_matched_service = PayloadFor_ScenarioMatchingAgent(
+			project_id = project_id,
+			user_input = nltk.sent_tokenize(user_input),
+		)
 		print(f"R2: best matched service {best_matched_service}")
 		current_status = "query_chat_call_scenario_recognizing_agent"
 		scenarios = call_R5_for_scenario_matching(best_matched_service)
