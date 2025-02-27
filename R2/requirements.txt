@@ -4,4 +4,4 @@ torch
 tensorflow_hub
 gensim
 sentence_transformers
-sklearn
+scikit-learn
