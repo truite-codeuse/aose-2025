@@ -67,11 +67,14 @@ This will start the API on `http://127.0.0.1:8007`.
 
 Initializes the agent by retrieving the scenarios and options associated with a given project.
 
-**Example Request:**
-
+**Example Request:** 
 ```json
+{
 POST http://127.0.0.1:8007/initialize
 Content-Type: application/json
+}
+```
+```json
 
 {
   "project_id": "your_project_id"
