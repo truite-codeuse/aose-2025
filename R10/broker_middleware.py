@@ -156,7 +156,7 @@ def call_R1_simple(session_id : str, user_input : str) -> str:
 def call_R5_for_scenario_matching(payload : PayloadFor_ScenarioMatchingAgent) -> PayloadFor_rAIsonAdapter:
 	route = "match"
 	headers = {"Content-Type": "application/json"}
-	body = payload
+	body = payload.model_dump()
 	response = requests.post(f"http://localhost:{PORT_R5}/{route}", headers = headers, json = body)
 	response.raise_for_status()
 	result = PayloadFor_rAIsonAdapter(**response.json())
@@ -165,7 +165,7 @@ def call_R5_for_scenario_matching(payload : PayloadFor_ScenarioMatchingAgent) ->
 def call_R6_for_raison(payload: PayloadFor_rAIsonAdapter) -> str:
 	route = "find_solution"
 	headers = {"Content-Type": "application/json"}
-	body = payload
+	body = payload.model_dump()
 	response = requests.post(f"http://localhost:{PORT_R6}/{route}", headers = headers, json = body)
 	response.raise_for_status()
 	result = response.json()["text"]
@@ -214,9 +214,10 @@ def middleware_pipeline(
 	- if in the "query_chat_return_raison_response" mode, returns the R6 response to GUI
 	"""
 	if session_id not in ONGOING_STATUSES:
-		ONGOING_STATUSES[session_id] = "check_casual_or_query"
+		ONGOING_STATUSES[session_id] = ("check_casual_or_query", None)
 	previous_status = ONGOING_STATUSES[session_id]
 	current_status : SessionStatus
+	project_id : ProjectID | None = None
 	if previous_status in [
 		"check_casual_or_query",
 		"casual_chat_return_llm_response",
@@ -243,7 +244,7 @@ def middleware_pipeline(
 			# ranked_matched_services = call_R2_for_ad(user_input)
 			# current_status = "query_chat_call_ad_agent"
 			# ad_text = call_R8_for_ad(session_id, ranked_matched_services)
-			matches = call_R2_for_scenario_matching_all_matches(user_input, threshold = 0.4)
+			matches = call_R2_for_scenario_matching_all_matches(user_input, threshold = 0.0)
 			print(f"R2: Found {len(matches)} matches for ads: {matches}")
 			if len(matches) == 0:
 				result = (
@@ -252,6 +253,8 @@ def middleware_pipeline(
 				)
 				current_status = "check_casual_or_query"
 			else:
+				matches = [matches[0]]
+				project_id = matches[0].project_id
 				projects_desc = [PROJECTS_DATA[match.project_id]["description"] for match in matches]
 				ad_text = "Hm, I think you might be interested in some of our services !\n" + "\n".join(projects_desc)
 				result = (
@@ -274,7 +277,7 @@ def middleware_pipeline(
 		result = raison_response + "\nWill you be need anything else ?"
 	else:
 		raise ValueError(f"Invalid current status: {current_status}")
-	ONGOING_STATUSES[session_id] = current_status
+	ONGOING_STATUSES[session_id] = (current_status, project_id)
 	return result
 
 
@@ -311,5 +314,5 @@ def pipeline_endpoint(request: BrokerPayload):
 
 if __name__ == "__main__":
 	PROJECTS_DATA : ProjectsDict = call_R2_for_project_data()
-	ONGOING_STATUSES : dict[SessionID, SessionStatus] = {}
+	ONGOING_STATUSES : dict[SessionID, tuple[SessionStatus, ProjectID | None]] = {}
 	uvicorn.run(app, host="0.0.0.0", port=PORT_R10)
