@@ -4,64 +4,133 @@
 
 R9- Beddouihech Maram
 
-## General Description
+## Description
 
-The Broker Agent – Matchmaking Service is used for routing requests to appropriate argumentation agents based on their advertised capabilities. This microservice employs text analysis techniques to match user inquiries with the most suitable services offered by argumentation agents.
+This project provides an API built with FastAPI that matches user prompts to available services based on cosine similarity. It utilizes `TF-IDF` (Term Frequency-Inverse Document Frequency) and `cosine similarity` to compare a user's request to the descriptions of available services.
+
+The API exposes a matchmaking endpoint where users can submit a prompt, and the system will return a list of services that match the prompt based on their descriptions.
+
+## Prerequisites
+
+Before starting, make sure you have the following:
+
+- **Python 3.7+**
+- **Pip** (Python package manager)
 
 ## Installation
 
-### Clone the Repository:
+1. Clone this repository:
+   ```bash
+   git clone https://your-repository-url
+   cd argumentation-agent-matchmaking
+   ```
 
-    ```bash
-    git clone https://github.com/marambeddouihech/aose-2025.git
-    cd R9
-    
-### Create and activate a virtual environment:
-      ```bash
-      python -m venv venv
-      source venv\Scripts\activate
+2. Create a virtual environment (optional but recommended):
+   ```bash
+   python -m venv venv
+   ```
 
-### Install required dependencies:
+3. Activate the virtual environment:
+   - On Windows:
+     ```bash
+     venv\Scripts\activate
+     ```
+   - On MacOS/Linux:
+     ```bash
+     source venv/bin/activate
+     ```
 
-    ```bash
-    pip install -r requirements.txt
+4. Install the required dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-### Run the service:
+## Run the server
 
-    uvicorn broker_service:app --host 0.0.0.0 --port 8003 --reload
+Start the FastAPI server with Uvicorn:
 
-## Key Features:
+```bash
+uvicorn role9_service:app --reload
+```
 
-### Advertisement Retrieval (R8):
+This will start the API on `http://127.0.0.1:8009`.
 
-Fetches advertisements from argumentation agents via an API.
+## Endpoints
 
-Stores advertisements in a repository for comparison with user requests.
+### 1. `/matchmaking` (POST Method)
 
-### Similarity Calculation:
+This endpoint receives a user prompt and returns a list of services that match the prompt based on cosine similarity.
 
-Uses cosine similarity to calculate the similarity between the user's request and service descriptions.
+**Example Request:**
 
-Configurable similarity threshold to adjust result relevance.
+```json
+POST http://127.0.0.1:8009/matchmaking
+Content-Type: application/json
 
-## Project Structure
+{
+  "user_prompt": "Describe the available options for argumentation agents."
+}
+```
 
-This section outlines the organization of the project directory, providing a clear view of the file system and their purposes:
+**Response:**
 
-R9/ |-- api.py # Handles API communication with external services |-- broker_service.py # Main service file initializing FastAPI and endpoints |-- private_info.py # Contains sensitive API key, not tracked by version control |-- requirements.txt # Lists all dependencies needed to run the project |-- README.md # Provides project overview and setup instructions.
+```json
+{
+  "status": "success",
+  "matched_services": {
+    "project_id_1": {
+      "description": "A detailed description of service 1.",
+      "scenarios": ["Scenario 1", "Scenario 2"],
+      "similarity_score": 0.75
+    },
+    "project_id_2": {
+      "description": "A detailed description of service 2.",
+      "scenarios": ["Scenario 3", "Scenario 4"],
+      "similarity_score": 0.68
+    }
+  }
+}
+```
 
+If no matching services are found:
 
-### Detailed File Descriptions
+```json
+{
+  "status": "No matching services found."
+}
+```
 
-- **`api.py`**: This file is responsible for all backend logic that deals with external API requests. It fetches and processes data required for the matchmaking operations.
+### 2. `/health` (GET Method)
 
-- **`broker_service.py`**: The core of the application, this script initializes the FastAPI application, defines API routes, and includes the server's main event loop.
+Checks if the server is healthy.
 
-- **`private_info.py`**: Stores configuration details such as API keys and other sensitive information, ensuring they are kept secure and out of version control.
+**Response:**
 
-- **`requirements.txt`**: Contains a list of all Python libraries that the project depends on, which can be installed using `pip`.
+```json
+{
+  "status": "OK"
+}
+```
 
-- **`README.md`**: Serves as the manual for the project, providing a description, installation instructions, usage guide, and additional information necessary for other developers to understand and use the project.
+## How It Works
+
+### Agent Initialization:
+
+- The API receives a `user_prompt` via the `/matchmaking` endpoint.
+- This `user_prompt` is used to match against service descriptions from available services.
+
+### Retrieving Scenarios, Options, and Description:
+
+- Once the data is fetched, it is compared using **TF-IDF vectorization** and **cosine similarity**.
+- The response includes:
+  - **Description**: The description of the matching service.
+  - **Scenarios**: The scenarios related to the service.
+  - **Similarity Score**: The cosine similarity score between the user prompt and service description.
+
+### Health Check:
+
+- The `/health` endpoint allows you to quickly check if the server is functioning correctly.
+
 
 
 
