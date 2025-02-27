@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TypedDict, Literal, Callable, Union, cast
+from typing_extensions import TypedDict, Literal, Callable, Union, cast
 from math import inf
 
 

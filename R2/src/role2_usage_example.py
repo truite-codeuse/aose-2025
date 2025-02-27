@@ -1,4 +1,4 @@
-from typing import TypedDict, Literal
+from typing_extensions import TypedDict, Literal
 import requests
 
 from pydantic import BaseModel

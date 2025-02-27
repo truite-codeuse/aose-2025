@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TypedDict, TYPE_CHECKING
+from typing_extensions import TypedDict, TYPE_CHECKING
 from os import environ
 import requests
 
