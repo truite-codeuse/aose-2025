@@ -4,7 +4,7 @@ import requests
 import uvicorn
 from fastapi import FastAPI
 from pydantic import BaseModel
-
+from fastapi.middleware.cors import CORSMiddleware
 
 PORT_R1  = 8000
 PORT_R2  = 8002
