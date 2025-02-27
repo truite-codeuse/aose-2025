@@ -102,8 +102,9 @@ RAISON_PROJECTS : ProjectsDict = {
 		"author": ("Latifou Yaya", "Abdou Aziz Thiam"),
 		"title": "Automatisation des Services RH : Tri Automatique des CVs",
 		"description": (
-			"This project aims to automate the CV sorting process to optimize recruitment procedures and "
-			"help human resources (HR) offices gain time. "
+			# "This project aims to automate the CV sorting process to optimize recruitment procedures and "
+			# "help human resources (HR) offices gain time. "
+			"This project leverages advanced natural language processing algorithms to analyze CVs in real time, extracting key information such as skills, experiences, and educational qualifications. By automating the initial screening process, it not only minimizes human error but also ensures a consistent evaluation of all candidates. Furthermore, the system centralizes candidate data into an easily accessible database, enabling HR teams to quickly identify top talent and streamline the recruitment process. This enhanced efficiency allows HR professionals to focus more on strategic decision-making and less on time-consuming administrative tasks, ultimately contributing to a more effective hiring process."
 		),
 		"elements": [],
 		"options": [],

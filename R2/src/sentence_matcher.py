@@ -399,6 +399,7 @@ def load_all_models() -> ModelsDict_Both:
 	nltk.download('omw-1.4')  # Open Multilingual WordNet; necessary for newer versions of wordnet
 	nltk.download('brown')	  # Brown corpus; necessary for a TF-IDF baseline
 	nltk.download('punkt')	  # Punkt tokenizer; necessary for sentence tokenization
+	nltk.download('punkt_tab')	# Punkt_tab
 	sentence_models : ModelsDict_Sentence = {
 		"sbert"           : load_sentence_model("sbert"),
 	#	"google-use-lite" : load_sentence_model("google-use-lite"),
@@ -465,6 +466,7 @@ if __name__ == '__main__':
 	nltk.download('omw-1.4')  # Open Multilingual WordNet; necessary for newer versions of wordnet
 	nltk.download('brown')	# Brown corpus; necessary for a TF-IDF baseline
 	nltk.download('punkt')	# Punkt tokenizer; necessary for sentence tokenization
+	nltk.download('punkt_tab')	# Punkt_tab
 	model_sentence : SentenceModel = load_sentence_model (DEFAULT_MODEL_SENTENCE)
 	model_lexicon  : LexiconModel  = load_lexicon_model  (DEFAULT_MODEL_LEXICON)
 

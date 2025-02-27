@@ -127,6 +127,7 @@ def match_scenario_endpoint(request: RawUserInput):
 		)
 		for matched_project in matched_projects
 	]
+	print(scores)
 	return result
 
 @app.get("/project_data", response_model=ProjectsDict)

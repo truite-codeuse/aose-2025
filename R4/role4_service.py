@@ -74,14 +74,15 @@ class UserInput(BaseModel):
 def classify_input(user_input: str) -> str:
     prompt = (
         f"Can you tell me if the following user input is a service request or an informal conversation? "
-        f"Reply 'true' if it's a service request, 'false' otherwise. "
+        f"Reply ONLY with 'true' if it's a service request, and ONLY with 'false' otherwise. "
         f"User input: {user_input}"
     )
 
     try:
         response = call_r1_api("classification_session", prompt)
+        print(response)
         
-        if "vrai" in response.lower():
+        if "true" in response.lower():
             return "decision"
         else:
             return "casual"
@@ -161,4 +162,4 @@ def classify_user_input(user_input: UserInput) -> bool:
 
 if __name__ == "__main__":
     
-    uvicorn.run("app.main:app", host="0.0.0.0", port=8004, reload=False)
+    uvicorn.run("role4_service:app", host="0.0.0.0", port=8004, reload=False)
