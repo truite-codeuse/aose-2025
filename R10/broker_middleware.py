@@ -5,6 +5,7 @@ import uvicorn
 from fastapi import FastAPI
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
+import nltk
 
 PORT_R1  = 8000
 PORT_R2  = 8002
@@ -244,7 +245,11 @@ def middleware_pipeline(
 			# ranked_matched_services = call_R2_for_ad(user_input)
 			# current_status = "query_chat_call_ad_agent"
 			# ad_text = call_R8_for_ad(session_id, ranked_matched_services)
-			matches = call_R2_for_scenario_matching_all_matches(user_input, threshold = 0.0)
+			# matches = call_R2_for_scenario_matching_all_matches(user_input, threshold = 0.0)
+			matches = [PayloadFor_ScenarioMatchingAgent(
+				project_id = ONGOING_STATUSES[session_id][1],
+				user_input = nltk.sent_tokenize(user_input),
+			)]
 			print(f"R2: Found {len(matches)} matches for ads: {matches}")
 			if len(matches) == 0:
 				result = (
@@ -253,7 +258,6 @@ def middleware_pipeline(
 				)
 				current_status = "check_casual_or_query"
 			else:
-				matches = [matches[0]]
 				project_id = matches[0].project_id
 				projects_desc = [PROJECTS_DATA[match.project_id]["description"] for match in matches]
 				ad_text = "Hm, I think you might be interested in some of our services !\n" + "\n".join(projects_desc)
