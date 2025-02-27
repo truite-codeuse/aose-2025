@@ -6,7 +6,7 @@ Role R6, Mohamed Azzaoui
 
 ### General Description
 
-This service is a microservice that finds solutions based on user input and matched scenarios with the platform AI Raison. It interacts with an LLM to generate clear and relevant explanatory responses. The service communicates with an LLM provided by **Role R2** to retrieve relevant information and receives input data (you can see it below) from **Role R5** via a dedicated endpoint.
+This service is a microservice that finds solutions based on user input and matched scenarios with the platform AI Raison. It interacts with an LLM to generate clear and relevant explanatory responses. The service communicates with an LLM provided by **Role R2** to create a clear response for the user and receives input data (the found scenarios and user's sentence) from **Role R5** via a dedicated endpoint.
 
 ### Installation
 
