@@ -1,0 +1,6 @@
+logging
+requests
+uvicorn
+fastapi
+sqlalchemy
+pydantic

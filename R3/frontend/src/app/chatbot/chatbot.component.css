@@ -1,0 +1,125 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+.wrapper {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Make the chat wider */
+.wrapper .box {
+    width: 80%; /* Increased from 90% to 80% */
+    max-width: 900px; /* Wider max width */
+    border: 1px solid #efefef;
+    padding: 15px;
+    min-height: 500px;
+    max-height: 500px;
+    overflow-y: auto;
+    background: white;
+    border-radius: 10px;
+}
+
+/* Message Group */
+.message-group {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 15px;
+}
+
+/* Bot Message */
+.wrapper .box .item.bot {
+    display: flex;
+    width: fit-content;
+}
+
+.wrapper .box .item.bot .msg {
+    background: #3f51b5;
+    color: white;
+    border-radius: 10px;
+    max-width: 80%; /* Wider messages */
+    padding: 10px;
+}
+
+/* User Message */
+.wrapper .box .item.right {
+    display: flex;
+    justify-content: flex-end;
+    width: 100%;
+}
+
+.wrapper .box .item.right .msg {
+    background: #efefef;
+    color: #333;
+    border-radius: 10px;
+    max-width: 80%; /* Wider messages */
+    padding: 10px;
+}
+
+/* Increase width of input area */
+.wrapper .typing-area {
+    width: 80%; /* Match chat width */
+    max-width: 900px; /* Wider input area */
+    background: #efefef;
+    height: 50px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 10px;
+    margin-top: 10px;
+    border-radius: 5px;
+}
+
+.wrapper .typing-area .input-field {
+    width: 100%;
+    position: relative;
+}
+
+.wrapper .typing-area .input-field input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid transparent;
+    border-radius: 5px;
+    outline: none;
+    padding-right: 70px;
+    font-family: 'Poppins', sans-serif;
+    transition: 0.3s all ease;
+}
+
+.wrapper .typing-area .input-field input:focus {
+    border-color: #3f51b5;
+}
+
+.wrapper .typing-area .input-field button {
+    position: absolute;
+    top: 50%;
+    right: 10px;
+    transform: translateY(-50%);
+    background: transparent;
+    border: 1px solid #3f51b5;
+    padding: 8px 12px;
+    border-radius: 5px;
+    color: #3f51b5;
+    outline: none;
+    cursor: pointer;
+    opacity: 0;
+    pointer-events: none;
+    transition: 0.3s all ease;
+}
+
+.wrapper .typing-area .input-field button:hover {
+    background: #3f51b5;
+    color: white;
+}
+
+.wrapper .typing-area .input-field input:valid ~ button {
+    opacity: 1;
+    pointer-events: auto;
+}

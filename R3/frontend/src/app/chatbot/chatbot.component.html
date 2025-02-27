@@ -1,0 +1,29 @@
+<div class="wrapper">
+    <div class="box">
+      <!-- Loop through messages -->
+      <div *ngFor="let msg of messages" class="message-group">
+        
+        <!-- Bot Response (No Icon) -->
+        <div class="item bot" *ngIf="msg.type === 'bot'">
+          <div class="msg">
+            <p>{{ msg.text }}</p>
+          </div>
+        </div>
+
+        <!-- User Message -->
+        <div class="item right" *ngIf="msg.type === 'user'">
+          <div class="msg">
+            <p>{{ msg.text }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Typing Area -->
+    <div class="typing-area">
+      <div class="input-field">
+        <input type="text" [(ngModel)]="userMessage" placeholder="Type your message" required>
+        <button (click)="sendMessage()">Send</button>
+      </div>
+    </div>
+</div>
