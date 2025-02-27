@@ -3,9 +3,6 @@ from pydantic import BaseModel
 import requests
 import json
 
-
-
-
 #  Vérification de la clé API
 try:
     from config import api_key
