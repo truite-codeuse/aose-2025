@@ -6,3 +6,4 @@ torch
 transformers
 bitsandbytes
 accelerate
+sentencepiece
