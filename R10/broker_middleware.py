@@ -215,7 +215,7 @@ def middleware_pipeline(
 	"""
 	if session_id not in ONGOING_STATUSES:
 		ONGOING_STATUSES[session_id] = ("check_casual_or_query", None)
-	previous_status = ONGOING_STATUSES[session_id]
+	previous_status = ONGOING_STATUSES[session_id][0]
 	current_status : SessionStatus
 	project_id : ProjectID | None = None
 	if previous_status in [
