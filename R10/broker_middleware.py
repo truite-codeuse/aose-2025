@@ -216,15 +216,16 @@ def middleware_pipeline(
 	"""
 	if session_id not in ONGOING_STATUSES:
 		ONGOING_STATUSES[session_id] = ("check_casual_or_query", None)
-	previous_status = ONGOING_STATUSES[session_id]
+	previous_status               = ONGOING_STATUSES[session_id][0]
+	project_id : ProjectID | None = ONGOING_STATUSES[session_id][1]
 	current_status : SessionStatus
-	project_id : ProjectID | None = None
 	if previous_status in [
 		"check_casual_or_query",
 		"casual_chat_return_llm_response",
 		"query_chat_return_raison_response",
 	]:
 		current_status = "check_casual_or_query"
+		project_id = None
 	elif previous_status == "query_chat_return_llm_ad_response":
 		current_status = "query_chat_call_sentence_matcher_for_service_agent_id"
 	else:
@@ -247,7 +248,7 @@ def middleware_pipeline(
 			# ad_text = call_R8_for_ad(session_id, ranked_matched_services)
 			# matches = call_R2_for_scenario_matching_all_matches(user_input, threshold = 0.0)
 			matches = [PayloadFor_ScenarioMatchingAgent(
-				project_id = ONGOING_STATUSES[session_id][1],
+				project_id = project_id,
 				user_input = nltk.sent_tokenize(user_input),
 			)]
 			print(f"R2: Found {len(matches)} matches for ads: {matches}")
