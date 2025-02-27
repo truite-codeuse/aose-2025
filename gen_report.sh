@@ -5,7 +5,7 @@ R3/README.md  file_separator.md \
 R4/README.md  file_separator.md \
 R5/README.md  file_separator.md \
 R6/README.md  file_separator.md \
-R7/README.md  file_separator.md \
+R7/READMER7.md  file_separator.md \
 R8/README.md  file_separator.md \
 R9/README.md  file_separator.md \
 R10/README.md file_separator.md \
