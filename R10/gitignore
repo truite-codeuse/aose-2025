@@ -1,0 +1,15 @@
+# Ignore log files
+middleware.log
+
+# Ignore virtual environment
+venv/
+
+# Ignore Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore environment variables or sensitive config files
+.env
+private_info.py
