@@ -24,6 +24,8 @@ This project is developed in Python. The API is built using Python FastAPI, a mo
 
 We have adapted the project's architecture from an agent-based communication model to a microservices architecture using API endpoints. Each microservice plays the role of an agent, and they are coordinated by a broker middleware which sits between the frontend and the other agents. This approach enhances the ease of creation and maintenance. Below is a sequence diagram illustrating how our application operates:
 
+![Simplified Architecture](simplified_arch.png)
+
 ![Sequence Diagram](Sequence_AOSE.png)
 
 Here are the different roles and their functionalities:
