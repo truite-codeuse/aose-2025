@@ -31,10 +31,6 @@ def match_endpoint(request: MatchRequest):
         print(f"Error occurred: {str(e)}")  # Log l'erreur
         raise HTTPException(status_code=500, detail="An error occurred on the server.")
     
-    # Optionally, send the result to Role 6 (currently commented out)
-    # send_to_role6(result)
-    
-    # For now, simply display the result (or return it)
     print("Result to be sent to user (not sent):", result)
     return MatchResponse(text=result)
 
